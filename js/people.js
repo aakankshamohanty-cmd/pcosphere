@@ -91,7 +91,7 @@ export async function boot() {
     if (!u && store.data.account.signedIn) u = await restoreDevice();
     if (u) {
       await afterSignIn(u, { quiet: true });
-      if (store.data.profile.role === "supporter") refreshInbox();
+      refreshInbox();
     }
     else if (store.data.account.signedIn) {
       store.data.account.signedIn = false; store.save();
@@ -189,7 +189,7 @@ async function refreshLinks() {
 }
 
 async function refreshInbox() {
-  if (!state.user || store.data.profile.role !== "supporter") return; // only her person receives ideas
+  if (!state.user || !(store.data.profile.role === "supporter" || state.links.supporting.length)) return; // only people who support someone receive ideas
   await loadFirebase(); // make sure sign-in is restored, or the server will refuse the request
   const r = await api("/api/hint", { action: "inbox" });
   if (r.ok) {
@@ -199,7 +199,7 @@ async function refreshInbox() {
     state.inbox = r.data.hints || [];
     state.inboxLoaded = true;
     if (!firstLoad && state.inbox.some((h) => !beforeIds.has(h.id))) banner("A little idea for today 💛");
-    if ((firstLoad || before !== state.inbox.map((h) => h.id).join()) && ctx.ui.screen === "supporterHome") ctx.render();
+    if ((firstLoad || before !== state.inbox.map((h) => h.id).join()) && ["supporterHome", "home"].includes(ctx.ui.screen)) ctx.render();
   }
 }
 
@@ -249,6 +249,20 @@ export function homeCards() {
     </div>`;
   }
 
+  // She's also someone else's person (e.g. a mum and daughter supporting each other)
+  if (state.links.supporting.length) {
+    if (!state.inboxLoaded && !state.inboxLoading) { state.inboxLoading = true; refreshInbox().finally(() => { state.inboxLoading = false; }); }
+    const owners = [...new Set(state.links.supporting.map((l) => l.ownerName))];
+    const latest = state.inbox[0];
+    html += `
+    <button class="path supporting-card ${latest && !latest.seen ? "fresh" : ""}" style="margin-top:12px" data-action="supporting-open">
+      <span class="bubble-ico" style="background:var(--calm);color:var(--calm-ink)">${ICON.me}</span>
+      <span><strong>You're ${esc(owners.join(" & "))}'s person 💛</strong>
+      <span class="sub">${latest ? (latest.seen ? "See ways to show up" : "New: a little idea for showing up") : "See ways to show up"}</span></span>
+      <span class="chev">${ICON.chev}</span>
+    </button>`;
+  }
+
   if (p.areas.includes("person") || isLinked() || state.links.invites.length) {
     const names = state.links.mine.map((l) => l.supporterName);
     html += `
@@ -288,7 +302,7 @@ export function suggestionCard() {
 
 export function settingsSection() {
   const { esc, ICON } = ctx;
-  if (DEMO) return `<div class="settings-group"><h3>Account</h3><p class="muted" style="font-size:14px">You're in the demo as ${DEMO === "him" ? "Arjun" : "Riya"}. Nothing here touches a real account.</p></div>`;
+  if (DEMO) return `<div class="settings-group"><h3>Account</h3><p class="muted" style="font-size:14px">You're in the demo as ${ctx.esc(store.data.profile.name)}. Nothing here touches a real account.</p></div>`;
   const acc = store.data.account;
   return `
   <div class="settings-group">
@@ -383,6 +397,16 @@ function People() {
             <button class="btn-link" data-action="invite-cancel" data-id="${esc(i.code)}">Cancel</button>
           </div>
         </div>`).join("")}
+      ${state.links.supporting.length ? `
+        <div class="section-title"><h3>You're the person for</h3></div>
+        ${state.links.supporting.map((l) => `
+          <div class="card person">
+            <div><strong>${esc(l.ownerName)}</strong></div>
+            <div class="row" style="flex:0 0 auto;gap:4px">
+              <button class="btn-link" data-action="supporting-open">See ideas</button>
+              <button class="btn-link" data-action="unlink" data-id="${esc(l.id)}">Unlink</button>
+            </div>
+          </div>`).join("")}` : ""}
       <div class="stack" style="margin-top:16px">
         ${isLinked() ? `<button class="btn btn-primary" data-action="nudge-start">Send a gentle nudge</button>` : ""}
         ${total < 2 ? `<button class="btn ${isLinked() ? "btn-ghost" : "btn-primary"}" data-action="invite-new">Invite ${total ? "another person" : "my person"}</button>` : `<p class="muted" style="font-size:14px;text-align:center">You've linked 2 people, the most for now.</p>`}
@@ -540,6 +564,7 @@ function Accept() {
         <li>Ideas are inspired by what ${name} chooses to share, but they won't say when she asked. Take them as a nudge to reach out.</li>
         <li>You won't see her check-ins or chats.</li>
         <li>Either of you can unlink anytime.</li>
+        ${store.data.profile.role === "me" && store.data.profile.onboarded ? `<li>You'll keep your own PCOSphere exactly as it is. This just adds ${name} to your home screen.</li>` : ""}
       </ul>
     </div>
     <div class="field">
@@ -556,7 +581,8 @@ function SupporterHome() {
   const { esc, topbar, ICON } = ctx;
   if (!poll && state.user) { refreshInbox(); poll = setInterval(refreshInbox, 20000); }
   const linked = state.links.supporting;
-  if (!state.user || !linked.length) {
+  const alsoMe = store.data.profile.role === "me";
+  if ((!state.user || !linked.length) && !alsoMe) {
     return `
     ${topbar({ back: "to-welcome" })}
     <section class="screen">
@@ -577,7 +603,7 @@ function SupporterHome() {
     return mins < 1 ? "just now" : mins < 60 ? `${mins} min ago` : mins < 1440 ? `${Math.round(mins / 60)} h ago` : new Date(t).toLocaleDateString();
   };
   return `
-  ${topbar({ settings: true })}
+  ${alsoMe ? topbar({ back: "home" }) : topbar({ settings: true })}
   <section class="screen">
     <div class="greet">
       <p class="eyebrow">You're ${esc(names.join(" & "))}'s person 💛</p>
@@ -617,6 +643,11 @@ function SupporterSettings() {
         <div class="card person"><div><strong>${esc(l.ownerName)}</strong></div><button class="btn-link" data-action="unlink" data-id="${esc(l.id)}">Unlink</button></div>`).join("") || `<p class="muted">No one yet.</p>`}
     </div>
     <div class="settings-group">
+      <h3>Using PCOSphere yourself?</h3>
+      <p class="muted" style="font-size:14px;margin-bottom:10px">If you'd like everyday support too, set up your own side. You'll stay ${esc([...new Set(state.links.supporting.map((l) => l.ownerName))].join(" & ") || "their")}'s person.</p>
+      <button class="list-btn" data-action="become-me">Set up PCOSphere for me <span class="chev">${ICON.chev}</span></button>
+    </div>
+    <div class="settings-group">
       <h3>Notifications</h3>
       ${NotifyCard({ compact: true }) || `<p class="muted" style="font-size:14px">Not on yet. Turn them on from your home screen.</p>`}
     </div>
@@ -640,7 +671,7 @@ export const screens = { people: People, invite: Invite, nudge: Nudge, nudgeSent
 export const ACTIONS = new Set([
   "sign-in", "sign-out", "dismiss-signin", "people", "invite-new", "invite-rel", "invite-create", "invite-share", "invite-copy",
   "invite-cancel", "unlink", "nudge-start", "nudge-who", "nudge-kind", "nudge-shuffle", "nudge-mode", "nudge-send",
-  "nudge-deliver-now", "nudge-outcome", "accept", "hint-seen", "supporter-settings", "notif-enable", "notif-test", "install-app",
+  "nudge-deliver-now", "nudge-outcome", "accept", "hint-seen", "supporter-settings", "supporting-open", "become-me", "notif-enable", "notif-test", "install-app",
 ]);
 export async function handle(action, el) {
   const { ui, go, render, toast } = ctx;
@@ -761,6 +792,13 @@ export async function handle(action, el) {
       return true;
     }
     case "supporter-settings": go("supporterSettings"); return true;
+    case "supporting-open": refreshInbox(); go("supporterHome"); return true;
+    case "become-me":
+      // Keep all links; just add her own side of the app
+      store.setProfile({ role: "me", onboarded: false });
+      ui.setupStep = 1;
+      go("setup");
+      return true;
     case "notif-enable": {
       if (!state.user) { toast("Please sign in first"); return true; }
       state.busy = true; render();
@@ -788,10 +826,17 @@ async function acceptInvite(supporterName) {
   state.busy = false;
   if (!r.ok) { state.error = r.data.error || "Couldn't accept. Please try again."; render(); return true; }
   state.accepted = true;
-  store.setProfile({ role: "supporter", onboarded: true, name: supporterName || store.data.profile.name });
+  const p = store.data.profile;
+  if (p.onboarded && p.role === "me") {
+    // She already uses PCOSphere for herself: keep her app, and add "You're Mum's person" to her home
+    if (supporterName && !p.name) store.setProfile({ name: supporterName });
+  } else {
+    store.setProfile({ role: "supporter", onboarded: true, name: supporterName || p.name });
+  }
   await refreshLinks();
   toast(`You're now ${r.data.ownerName}'s person 💛`);
-  go("supporterHome");
+  refreshInbox();
+  go(store.data.profile.role === "me" ? "home" : "supporterHome");
   return true;
 }
 

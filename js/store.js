@@ -10,7 +10,7 @@ function defaults() {
   if (DEMO) {
     return {
       profile: demoProfile(),
-      history: DEMO === "her" ? [{ ts: Date.now() - 86400000, ideaId: "stroll", title: "A ten-minute stroll, no goal", category: "move", outcome: "better" }] : [],
+      history: DEMO !== "him" ? [{ ts: Date.now() - 86400000, ideaId: "stroll", title: "A ten-minute stroll, no goal", category: "move", outcome: "better" }] : [],
       checkins: [], chat: [], usage: { day: "", count: 0 },
       account: { signedIn: true, dismissedSigninNudge: true }, nudges: [],
     };

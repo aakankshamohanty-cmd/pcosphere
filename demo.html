@@ -20,6 +20,10 @@
     .actions { display: flex; gap: 8px; }
     .btn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 10px 16px; font: inherit; font-weight: 600; cursor: pointer; color: var(--ink); text-decoration: none; }
     .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .stories { max-width: 1060px; margin: 14px auto 0; padding: 0 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .story { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 10px 16px; font: inherit; font-weight: 600; cursor: pointer; color: var(--ink); }
+    .story[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+    .story-note { max-width: 1060px; margin: 10px auto 0; padding: 0 16px; color: var(--muted); font-size: 14px; }
     .guide { max-width: 1060px; margin: 14px auto 0; padding: 0 16px; }
     .guide ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; counter-reset: g; }
     .guide li { counter-increment: g; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; font-size: 14px; }
@@ -50,7 +54,7 @@
   <header>
     <div>
       <h1>See both sides</h1>
-      <p class="lead"><strong>Riya</strong> has PCOS and uses PCOSphere. <strong>Arjun</strong> is her person. Both phones are the full app, already linked. No sign-up needed; the AI is real.</p>
+      <p class="lead" id="lead"></p>
     </div>
     <div class="actions">
       <button class="btn" id="reset">Reset demo</button>
@@ -58,28 +62,29 @@
     </div>
   </header>
 
+  <div class="stories" role="group" aria-label="Choose a story">
+    <button class="story" data-story="partner">💛 Riya &amp; her partner</button>
+    <button class="story" data-story="family">🌷 Riya &amp; her mum</button>
+  </div>
+  <p class="story-note" id="story-note"></p>
+
   <section class="guide" aria-label="Try this">
-    <ol>
-      <li><strong>Check in as Riya.</strong> Tap Quick check-in, pick a feeling or two, and get one small next step.</li>
-      <li><strong>Open an area.</strong> Try Craving kitchen for recipes, or Move menu for a routine.</li>
-      <li><strong>Talk to PCOSphere.</strong> Vent, or ask anything about PCOS.</li>
-      <li><strong>Nudge Arjun.</strong> Home → Your person → Send a gentle nudge → now. Watch his phone.</li>
-    </ol>
+    <ol id="guide"></ol>
   </section>
 
   <div class="switch" role="group" aria-label="Choose phone">
     <button id="show-her" aria-pressed="true">Riya's phone</button>
-    <button id="show-him" aria-pressed="false">Arjun's phone</button>
+    <button id="show-him" aria-pressed="false"></button>
   </div>
 
   <main class="phones">
     <figure id="her">
-      <figcaption>Riya <span>· has PCOS</span></figcaption>
-      <div class="phone"><iframe title="Riya's PCOSphere" src="/?demo=her"></iframe></div>
+      <figcaption id="cap-left"></figcaption>
+      <div class="phone"><iframe id="frame-left" title="Riya's PCOSphere"></iframe></div>
     </figure>
     <figure id="him">
-      <figcaption>Arjun <span>· her person</span></figcaption>
-      <div class="phone"><iframe title="Arjun's PCOSphere" src="/?demo=him"></iframe></div>
+      <figcaption id="cap-right"></figcaption>
+      <div class="phone"><iframe id="frame-right" title="Second phone"></iframe></div>
     </figure>
   </main>
 
@@ -99,18 +104,66 @@
     bHer.onclick = () => show("her");
     bHim.onclick = () => show("him");
     show("her");
-    // On a phone, hint that something arrived on Arjun's side
-    window.addEventListener("storage", (e) => {
-      if (e.key === "pcosphere.demo.shared" && matchMedia("(max-width: 900px)").matches && bHer.getAttribute("aria-pressed") === "true") {
-        bHim.textContent = "Arjun's phone 🔔";
-      }
-    });
-    bHim.addEventListener("click", () => { bHim.textContent = "Arjun's phone"; });
-    // Reset: clear only the demo's own data, then reload both phones
-    document.getElementById("reset").onclick = () => {
-      Object.keys(localStorage).filter((k) => k.startsWith("pcosphere.demo.")).forEach((k) => localStorage.removeItem(k));
-      document.querySelectorAll("iframe").forEach((f) => { f.src = f.src; });
+    // Two demo stories
+    const STORIES = {
+      partner: {
+        lead: "<strong>Riya</strong> has PCOS and uses PCOSphere. <strong>Arjun</strong> is her partner and her person. Both phones are the full app, already linked. No sign-up needed; the AI is real.",
+        note: "",
+        left: ["her", "Riya", "has PCOS"], right: ["him", "Arjun", "her partner, her person"],
+        guide: [
+          ["Check in as Riya.", "Tap Quick check-in, pick a feeling or two, and get one small next step."],
+          ["Open an area.", "Try Craving kitchen for recipes, or Move menu for a routine."],
+          ["Talk to PCOSphere.", "Vent, or ask anything about PCOS."],
+          ["Nudge Arjun.", "Home → Your person → Send a gentle nudge → now. Watch his phone."],
+        ],
+      },
+      family: {
+        lead: "<strong>Riya</strong> and her mum <strong>Meera</strong> both use PCOSphere for themselves, and each is the other's person. Support goes both ways. No sign-up needed; the AI is real.",
+        note: "PCOS often runs in families, so a mum and daughter (or two sisters) may both want support, and want to support each other.",
+        left: ["daughter", "Riya", "uses PCOSphere"], right: ["mum", "Meera", "her mum, also uses PCOSphere"],
+        guide: [
+          ["Two full apps.", "Each phone is someone's own PCOSphere, in her own theme."],
+          ["Riya nudges Mum.", "On Riya's phone: Your person → Send a gentle nudge → now."],
+          ["Mum sees it.", "Meera's own home shows \"You're Riya's person 💛\". Tap it."],
+          ["And back again.", "From Meera's phone, send Riya a nudge. Watch it land on Riya's home."],
+        ],
+      },
     };
+    let story = new URLSearchParams(location.search).has("family") ? "family" : "partner";
+    const $ = (id) => document.getElementById(id);
+    function loadStory(name) {
+      story = name;
+      const st = STORIES[name];
+      $("lead").innerHTML = st.lead;
+      $("story-note").textContent = st.note;
+      $("story-note").style.display = st.note ? "" : "none";
+      $("guide").innerHTML = st.guide.map(([t, d]) => `<li><strong>${t}</strong> ${d}</li>`).join("");
+      $("cap-left").innerHTML = `${st.left[1]} <span>· ${st.left[2]}</span>`;
+      $("cap-right").innerHTML = `${st.right[1]} <span>· ${st.right[2]}</span>`;
+      $("frame-left").src = `/?demo=${st.left[0]}`;
+      $("frame-right").src = `/?demo=${st.right[0]}`;
+      $("frame-right").title = `${st.right[1]}'s PCOSphere`;
+      bHer.textContent = `${st.left[1]}'s phone`;
+      bHim.textContent = `${st.right[1]}'s phone`;
+      document.querySelectorAll(".story").forEach((b) => b.setAttribute("aria-pressed", b.dataset.story === name));
+      show("her");
+    }
+    document.querySelectorAll(".story").forEach((b) => b.onclick = () => loadStory(b.dataset.story));
+
+    // On a phone, hint that something arrived on the other side
+    window.addEventListener("storage", (e) => {
+      if (!["pcosphere.demo.shared", "pcosphere.demo.family"].includes(e.key) || !matchMedia("(max-width: 900px)").matches) return;
+      const hidden = bHer.getAttribute("aria-pressed") === "true" ? bHim : bHer;
+      if (!hidden.textContent.includes("🔔")) hidden.textContent += " 🔔";
+    });
+    [bHer, bHim].forEach((b) => b.addEventListener("click", () => { b.textContent = b.textContent.replace(" 🔔", ""); }));
+
+    // Reset: clear only the demo's own data, then reload both phones
+    $("reset").onclick = () => {
+      Object.keys(localStorage).filter((k) => k.startsWith("pcosphere.demo.")).forEach((k) => localStorage.removeItem(k));
+      loadStory(story);
+    };
+    loadStory(story);
   </script>
 </body>
 </html>

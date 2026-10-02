@@ -480,3 +480,4 @@ textarea.input { resize: none; min-height: 80px; }
 .banner span { font-size: 14px; color: #5C554F; }
 .banner.out { opacity: 0; transform: translate(-50%, -12px); transition: all .5s ease; }
 @keyframes drop { from { opacity: 0; transform: translate(-50%, -16px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.supporting-card.fresh { background: var(--calm); border-color: transparent; }
