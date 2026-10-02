@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // POST /api/link
 // Everything about connecting her with up to 2 trusted people, done on the server so the rules can't be bypassed.
 // Actions: create-invite, invite-info, accept-invite, list, unlink, cancel-invite

@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // Talks to PCOSphere's /api/chat endpoint. Returns null if the AI can't be reached,
 // so every caller can fall back to the built-in idea library instead of showing an error.
 

@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // Shared AI helper for PCOSphere's server functions.
 // Tries Gemini first, then Groq as a backup. Keys come from Vercel's environment variables
 // and never reach the browser. Files in api/_lib are helpers, not public endpoints.

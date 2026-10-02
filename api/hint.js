@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // POST /api/hint
 // Sends her chosen gentle hint to her person(s), now or after a random 20–60 minute delay.
 // Actions: send, inbox, seen, deliver-now

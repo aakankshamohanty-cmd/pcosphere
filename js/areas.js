@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // PCOSphere area pages: each support area has its own kind of tool.
 //   Food & cravings      -> Craving kitchen (AI recipes for the taste she wants)
 //   Mood & mind          -> Calm corner (instant tools, listening chat, guided videos, real help)

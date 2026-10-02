@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // Reads the FIREBASE_SERVICE_ACCOUNT secret robustly.
 // Pasting a multi-line JSON file into a one-line box can double it up or turn line breaks into real newlines,
 // so we try a few safe repairs before giving up. Nothing here ever logs or returns the secret itself.

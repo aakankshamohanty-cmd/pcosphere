@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // GET /api/deliver?key=CRON_SECRET  (called every minute by cron-job.org)
 // Finds "gentle nudge later" hints whose random 20–60 minute delay is up, delivers them and sends a discreet push.
 

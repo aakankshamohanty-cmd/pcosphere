@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // PCOSphere service worker: receives push notifications even when the app is closed.
 // Lock-screen text is always discreet; the actual idea is only shown inside the app.
 

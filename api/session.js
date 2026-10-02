@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // POST /api/session
 // "Remember this phone": iPhone Home Screen apps can forget Google's login when closed.
 // After a real sign-in, the phone gets a private device key; only a hash of it is stored here.

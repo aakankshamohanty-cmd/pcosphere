@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // PCOSphere content: support areas, themes, check-in options, the idea library and approved facts.
 // Wording rules: no food guilt, no "burning off", no diagnosis, no cycle-phase predictions.
 

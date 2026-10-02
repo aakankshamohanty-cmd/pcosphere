@@ -1,3 +1,4 @@
+/* PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE. */
 /* ==========================================================================
    PCOSphere styles
    Every theme only swaps the tokens below; layout and behaviour stay the same.
@@ -481,3 +482,5 @@ textarea.input { resize: none; min-height: 80px; }
 .banner.out { opacity: 0; transform: translate(-50%, -12px); transition: all .5s ease; }
 @keyframes drop { from { opacity: 0; transform: translate(-50%, -16px); } to { opacity: 1; transform: translate(-50%, 0); } }
 .supporting-card.fresh { background: var(--calm); border-color: transparent; }
+
+.credit { display: inline-block; margin-top: 6px; font-size: 12px; color: var(--muted); }

@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // Everything PCOSphere remembers lives here, on this device only (localStorage).
 // Later, signed-in users will also sync their profile and "what helped" to their account.
 

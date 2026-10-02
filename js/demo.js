@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // "See both sides" demo: two copies of PCOSphere running side by side on demo.html, already linked.
 // Two stories:
 //   Partner: Riya (has PCOS) and Arjun, her person         -> ?demo=her / ?demo=him

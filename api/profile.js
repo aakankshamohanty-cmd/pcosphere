@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // POST /api/profile
 // Keeps a signed-in user's setup safe if they change phones: name, theme, support areas, role and "what helped".
 // Check-ins and chats are NOT stored here; they stay on the phone.

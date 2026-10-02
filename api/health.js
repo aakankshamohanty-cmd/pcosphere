@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // GET /api/health
 // A safe diagnostic: says which setup step works, without ever revealing a secret or its contents.
 

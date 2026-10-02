@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // PCOSphere "support for two": sign-in, inviting up to 2 trusted people, consent on both sides,
 // sending subtle hints, and the supporter's side of the app.
 // Hints never say she asked. Her check-ins and chats are never shared.

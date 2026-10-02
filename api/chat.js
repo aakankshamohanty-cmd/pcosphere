@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // POST /api/chat
 // One endpoint for both AI moments in PCOSphere:
 //   mode "checkin": tailor one next step to a quick check-in (no questions)

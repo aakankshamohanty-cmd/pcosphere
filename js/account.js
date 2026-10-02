@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // Google sign-in (Firebase Auth) and calls to PCOSphere's server functions.
 // Firebase is only loaded when someone signs in or opens an invite, so the app stays light otherwise.
 // This config is public by design; the database itself is locked and only the server can use it.

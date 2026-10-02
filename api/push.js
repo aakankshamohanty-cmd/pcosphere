@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // POST /api/push
 // Lets a phone register for notifications, and send itself a test one.
 // Actions: register, unregister, test

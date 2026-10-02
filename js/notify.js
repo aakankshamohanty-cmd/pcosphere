@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // Installing PCOSphere to the Home Screen, and turning on push notifications.
 // iPhone only allows web notifications once the app is added to the Home Screen (iOS 16.4+).
 

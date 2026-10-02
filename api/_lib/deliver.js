@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // Delivers pending "later" hints whose time has come, and sends each person a discreet push.
 // Shared by the scheduler (/api/deliver), the person's inbox and the demo "deliver now" shortcut.
 

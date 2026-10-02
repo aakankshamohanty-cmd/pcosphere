@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // POST /api/area
 // AI tools for the area pages:
 //   mode "recipes": Craving kitchen, 2–3 quick recipes for the taste she's after

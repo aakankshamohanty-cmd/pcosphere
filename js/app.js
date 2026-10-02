@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // PCOSphere: quick check-in -> one realistic next step -> kind follow-up.
 import { AREAS, THEMES, FEELINGS, TIMES, PLACES, CATEGORIES, FACTS, needsCare, pickIdeas, reflectionFor, FOLLOWUPS, IDEAS } from "./content.js";
 import { store } from "./store.js";
@@ -495,6 +496,7 @@ function About() {
     <p><strong>Your data:</strong> your check-ins and chats are saved only on this phone. Nothing is shared with anyone unless you choose to.</p>
     <p><strong>About the AI:</strong> to write replies and tailor suggestions, your check-in details and chat messages are sent to Google Gemini (or Groq as a backup). On their free plans, these providers may use that text to improve their services, so please don't share anything you'd want kept private. If the AI is unavailable, PCOSphere uses its own built-in ideas instead.</p>
     <p class="muted">General wellness ideas only. Please talk to your doctor about symptoms or treatment. In an emergency call 112. For mental health support, Tele-MANAS is free and 24/7 at 14416.</p>
+    <p class="credit" style="margin-top:20px">PCOSphere was designed and built by <strong>Aakanksha Mohanty</strong>. © 2026, all rights reserved.</p>
   </section>`;
 }
 
@@ -839,6 +841,8 @@ people.setup({
   ui, go, render, rerenderInPlace, topbar, esc, ICON, toast, profile, helpedIdeas, applyTheme,
   themePicker: () => ThemePicker(),
 });
+// Signature for anyone peeking at the code
+console.info("%cPCOSphere", "font: 600 16px serif; color: #5F7F63", "\nDesigned and built by Aakanksha Mohanty · © 2026, all rights reserved.");
 applyTheme(profile().theme);
 render();
 people.boot();

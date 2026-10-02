@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // Firebase Admin for PCOSphere's server functions.
 // Uses the FIREBASE_SERVICE_ACCOUNT secret stored in Vercel (never in the code or GitHub).
 

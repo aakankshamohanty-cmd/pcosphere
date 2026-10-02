@@ -71,3 +71,5 @@ I built PCOSphere with **Claude (Claude Code)** as my coding partner. The idea c
 ---
 
 *PCOSphere shares general wellness ideas, not medical advice.*
+
+**© 2026 Aakanksha Mohanty. All rights reserved.** This code is shared for viewing and evaluation only; see [LICENSE](LICENSE). No reuse without written permission.

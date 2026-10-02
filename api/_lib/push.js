@@ -1,3 +1,4 @@
+// PCOSphere · © 2026 Aakanksha Mohanty. All rights reserved. See LICENSE.
 // Sends discreet push notifications through Firebase Cloud Messaging (free).
 // Lock-screen text never contains the hint itself; it's only shown inside the app.
 
