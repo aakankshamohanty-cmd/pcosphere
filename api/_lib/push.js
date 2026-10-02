@@ -4,7 +4,7 @@
 
 const { admin, db } = require("./firebase");
 
-const DISCREET = { title: "PCOSphere", body: "A little idea for today 💛" };
+const DISCREET = { title: "PCOSphere", body: "A little idea for today 🩷" };
 
 async function sendToUser(uid, message = DISCREET) {
   const ref = db().collection("users").doc(uid);

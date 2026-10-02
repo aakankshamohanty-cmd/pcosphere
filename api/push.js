@@ -26,7 +26,7 @@ module.exports = async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
     if (req.body?.action === "test") {
-      const r = await sendToUser(user.uid, { title: "PCOSphere", body: "Notifications are on. Gentle ideas will arrive here 💛", tag: "pcosphere-test" });
+      const r = await sendToUser(user.uid, { title: "PCOSphere", body: "Notifications are on. Gentle ideas will arrive here 🩷", tag: "pcosphere-test" });
       return res.status(200).json(r);
     }
     return res.status(400).json({ error: "Unknown action" });
