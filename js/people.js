@@ -244,7 +244,7 @@ export function homeCards() {
       <h3>Did ${esc(n.names.join(" or "))} reach out?</h3>
       <p class="muted" style="margin:4px 0 12px;font-size:14px">Just for you. They'll never see this.</p>
       <div class="row">
-        <button class="btn btn-primary" data-action="nudge-outcome" data-id="${n.ts}" data-outcome="asked">They asked 💕</button>
+        <button class="btn btn-primary" data-action="nudge-outcome" data-id="${n.ts}" data-outcome="asked">They asked 💛</button>
         <button class="btn btn-ghost" data-action="nudge-outcome" data-id="${n.ts}" data-outcome="not-yet">Not yet</button>
       </div>
     </div>`;
@@ -258,7 +258,7 @@ export function homeCards() {
     html += `
     <button class="path supporting-card ${latest && !latest.seen ? "fresh" : ""}" style="margin-top:12px" data-action="supporting-open">
       <span class="bubble-ico" style="background:var(--calm);color:var(--calm-ink)">${ICON.me}</span>
-      <span><strong>You're ${esc(owners.join(" & "))}'s person 💕</strong>
+      <span><strong>You're ${esc(owners.join(" & "))}'s person 💛</strong>
       <span class="sub">${latest ? (latest.seen ? "See ways to show up" : "New: a little idea for showing up") : "See ways to show up"}</span></span>
       <span class="chev">${ICON.chev}</span>
     </button>`;
@@ -607,7 +607,7 @@ function SupporterHome() {
   ${alsoMe ? topbar({ back: "home" }) : topbar({ settings: true })}
   <section class="screen">
     <div class="greet">
-      <p class="eyebrow">You're ${esc(names.join(" & "))}'s person 💕</p>
+      <p class="eyebrow">You're ${esc(names.join(" & "))}'s person 💛</p>
       <h1>Ways to show up today</h1>
     </div>
     ${NotifyCard()}
@@ -615,7 +615,7 @@ function SupporterHome() {
       <div class="hint-card ${latest.seen ? "" : "fresh"}">
         <p class="eyebrow">A little idea · ${when(latest.deliveredAt)}</p>
         <p class="hint-text">${esc(latest.text)}</p>
-        ${latest.seen ? `<p class="muted" style="font-size:14px">Noted 💕</p>` : `<button class="btn btn-primary" data-action="hint-seen" data-id="${esc(latest.id)}">Got it 💕</button>`}
+        ${latest.seen ? `<p class="muted" style="font-size:14px">Noted 🌸</p>` : `<button class="btn btn-primary" data-action="hint-seen" data-id="${esc(latest.id)}">Got it 🌸</button>`}
       </div>` : !state.inboxLoaded ? `
       <div class="card"><p class="muted">Checking for new ideas…</p></div>` : `
       <div class="card">
@@ -835,7 +835,7 @@ async function acceptInvite(supporterName) {
     store.setProfile({ role: "supporter", onboarded: true, name: supporterName || p.name });
   }
   await refreshLinks();
-  toast(`You're now ${r.data.ownerName}'s person 💕`);
+  toast(`You're now ${r.data.ownerName}'s person 💛`);
   refreshInbox();
   go(store.data.profile.role === "me" ? "home" : "supporterHome");
   return true;
