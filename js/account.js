@@ -5,10 +5,13 @@
 export const SDK = "https://www.gstatic.com/firebasejs/12.19.0";
 const REDIRECT_FLAG = "pcosphere.redirect";
 
-// When opened from the Home Screen (iPhone especially), sign-in works best as a full-page redirect
-// through our own domain. Vercel forwards /__/auth to Firebase (see vercel.json).
+// Sign-in runs through our own domain (Vercel forwards /__/auth to Firebase, see vercel.json),
+// so iPhones don't block it as "cross-site". On iPhones and Home Screen apps we use a full-page
+// redirect, which is more reliable there than a popup.
 export const isStandalone = () => window.matchMedia?.("(display-mode: standalone)").matches || navigator.standalone === true;
-const useOwnDomain = isStandalone() && location.hostname === "pcosphere.vercel.app";
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const useOwnDomain = location.hostname === "pcosphere.vercel.app";
+const preferRedirect = useOwnDomain && (isStandalone() || isIOS);
 
 const CONFIG = {
   apiKey: "AIzaSyCiNulDd5CZThAQwI5jqXUwYi8GTNY2jnc",
@@ -54,7 +57,7 @@ export async function signIn() {
     await mod.signInWithRedirect(auth, provider);
     return null;
   };
-  if (useOwnDomain) return redirect();
+  if (preferRedirect) return redirect();
   try {
     const result = await mod.signInWithPopup(auth, provider);
     return result.user;

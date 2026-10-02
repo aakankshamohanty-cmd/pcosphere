@@ -12,6 +12,7 @@ let templates = null;
 let poll = null;
 let syncTimer = null;
 
+const PENDING_ACCEPT = "pcosphere.pendingAccept";
 const RELATIONS = ["partner", "best friend", "friend", "mum", "dad", "sibling", "cousin", "someone close"];
 const SHOW_UP = [
   ["Ask, then listen.", "\"How are you, really?\" and let her lead. You don't have to fix anything."],
@@ -58,12 +59,28 @@ export async function boot() {
       if (ctx.ui.screen === "accept") ctx.render();
     });
   }
-  if (store.data.account.signedIn || code || redirectPending()) {
+  let hasPending = false;
+  try { hasPending = !!localStorage.getItem(PENDING_ACCEPT); } catch {}
+  if (store.data.account.signedIn || code || redirectPending() || hasPending) {
     await loadFirebase();
     const u = await currentUser();
     if (u) await afterSignIn(u, { quiet: true });
     else if (store.data.account.signedIn) { store.data.account.signedIn = false; store.save(); }
-    ctx.render();
+    // Coming back from a full-page sign-in in the middle of accepting an invite: finish it
+    let pending = null;
+    try { pending = JSON.parse(localStorage.getItem(PENDING_ACCEPT)); } catch {}
+    if (pending?.code) {
+      try { localStorage.removeItem(PENDING_ACCEPT); } catch {}
+      if (u) {
+        state.inviteCode = pending.code;
+        state.inviteInfo = { valid: true, ownerName: "" };
+        ctx.go("accept");
+        await acceptInvite(pending.supporterName);
+        return;
+      }
+    }
+    if (ctx.ui.screen === "welcome" && store.data.profile.onboarded) ctx.go(homeFor());
+    else ctx.render();
   }
 }
 
@@ -667,18 +684,16 @@ export async function handle(action, el) {
     case "accept": {
       const supporterName = document.getElementById("supporter-name")?.value.trim() || "";
       state.error = "";
-      if (!state.user) { await doSignIn(); if (!state.user) return true; }
-      state.busy = true; render();
-      const r = await api("/api/link", { action: "accept-invite", code: state.inviteCode, supporterName });
-      state.busy = false;
-      if (!r.ok) { state.error = r.data.error || "Couldn't accept. Please try again."; render(); return true; }
-      state.accepted = true;
-      store.setProfile({ role: "supporter", onboarded: true, name: supporterName || store.data.profile.name });
-      await refreshLinks();
-      toast(`You're now ${r.data.ownerName}'s person 💛`);
-      go("supporterHome");
-      return true;
+      if (!state.user) {
+        // Remember the invite in case sign-in leaves the page and comes back
+        try { localStorage.setItem(PENDING_ACCEPT, JSON.stringify({ code: state.inviteCode, supporterName })); } catch {}
+        await doSignIn();
+        if (!state.user) return true;
+        try { localStorage.removeItem(PENDING_ACCEPT); } catch {}
+      }
+      return acceptInvite(supporterName);
     }
+
     case "hint-seen": {
       const h = state.inbox.find((x) => x.id === id);
       if (h) h.seen = true;
@@ -705,6 +720,20 @@ export async function handle(action, el) {
     case "install-app": await promptInstall(); render(); return true;
   }
   return false;
+}
+
+async function acceptInvite(supporterName) {
+  const { go, render, toast } = ctx;
+  state.busy = true; render();
+  const r = await api("/api/link", { action: "accept-invite", code: state.inviteCode, supporterName });
+  state.busy = false;
+  if (!r.ok) { state.error = r.data.error || "Couldn't accept. Please try again."; render(); return true; }
+  state.accepted = true;
+  store.setProfile({ role: "supporter", onboarded: true, name: supporterName || store.data.profile.name });
+  await refreshLinks();
+  toast(`You're now ${r.data.ownerName}'s person 💛`);
+  go("supporterHome");
+  return true;
 }
 
 function homeFor() {
