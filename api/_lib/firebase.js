@@ -2,12 +2,12 @@
 // Uses the FIREBASE_SERVICE_ACCOUNT secret stored in Vercel (never in the code or GitHub).
 
 const admin = require("firebase-admin");
+const { parseServiceAccount } = require("./service-account");
 
 function init() {
   if (admin.apps.length) return admin.app();
-  const raw = (process.env.FIREBASE_SERVICE_ACCOUNT || "").trim();
-  if (!raw) throw new Error("FIREBASE_SERVICE_ACCOUNT missing");
-  const sa = JSON.parse(raw);
+  const sa = parseServiceAccount(process.env.FIREBASE_SERVICE_ACCOUNT);
+  if (!sa) throw new Error("FIREBASE_SERVICE_ACCOUNT missing or unreadable");
   if (sa.private_key) sa.private_key = sa.private_key.replace(/\\n/g, "\n");
   return admin.initializeApp({ credential: admin.credential.cert(sa) });
 }
