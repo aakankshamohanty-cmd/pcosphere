@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PCOSphere · See both sides</title>
+  <meta name="description" content="Try PCOSphere as Riya, who has PCOS, and as Arjun, her person, side by side. No sign-up needed." />
+  <meta name="theme-color" content="#F6F1E7" />
+  <link rel="icon" href="/icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Fraunces:opsz,wght@9..144,500&display=swap" rel="stylesheet" />
+  <style>
+    :root { --bg: #F6F1E7; --surface: #FFFDF8; --ink: #33302A; --muted: #6F685D; --line: #E2D9C8; --accent: #5F7F63; --soft: #DDE7D6; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 "DM Sans", system-ui, sans-serif; }
+    header { max-width: 1060px; margin: 0 auto; padding: 24px 16px 8px; display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; justify-content: space-between; }
+    h1 { font-family: "Fraunces", Georgia, serif; font-weight: 500; font-size: clamp(28px, 4vw, 40px); margin: 0; letter-spacing: -.015em; line-height: 1.1; }
+    .lead { color: var(--muted); margin: 8px 0 0; max-width: 560px; }
+    .actions { display: flex; gap: 8px; }
+    .btn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 10px 16px; font: inherit; font-weight: 600; cursor: pointer; color: var(--ink); text-decoration: none; }
+    .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .guide { max-width: 1060px; margin: 14px auto 0; padding: 0 16px; }
+    .guide ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; counter-reset: g; }
+    .guide li { counter-increment: g; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; font-size: 14px; }
+    .guide li::before { content: counter(g); display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--soft); color: var(--accent); font-weight: 700; font-size: 12px; margin-right: 8px; }
+    .guide strong { display: inline; }
+    .switch { display: none; max-width: 420px; margin: 16px auto 0; padding: 4px; background: #EDE6D8; border-radius: 999px; }
+    .switch button { flex: 1; border: 0; background: transparent; border-radius: 999px; padding: 10px; font: inherit; font-weight: 600; cursor: pointer; color: var(--ink); }
+    .switch button[aria-pressed="true"] { background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+    .phones { max-width: 1060px; margin: 18px auto 0; padding: 0 16px 32px; display: flex; gap: 36px; justify-content: center; }
+    figure { margin: 0; display: grid; gap: 10px; justify-items: center; }
+    figcaption { font-weight: 600; }
+    figcaption span { color: var(--muted); font-weight: 400; }
+    .phone { width: 390px; height: 800px; border-radius: 44px; border: 10px solid #24211D; background: #24211D; overflow: hidden; box-shadow: 0 20px 50px rgba(36,33,29,.25); }
+    .phone iframe { width: 100%; height: 100%; border: 0; border-radius: 34px; background: var(--bg); }
+    footer { text-align: center; color: var(--muted); font-size: 13px; padding: 0 16px 28px; }
+    footer a { color: var(--accent); }
+    @media (max-width: 900px) {
+      .guide ol { grid-template-columns: 1fr 1fr; }
+      .switch { display: flex; }
+      .phones { gap: 0; }
+      figure[hidden-on-mobile] { display: none; }
+      .phone { width: min(390px, calc(100vw - 32px)); height: 74vh; border-radius: 36px; }
+    }
+    @media (max-width: 480px) { .guide ol { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div>
+      <h1>See both sides</h1>
+      <p class="lead"><strong>Riya</strong> has PCOS and uses PCOSphere. <strong>Arjun</strong> is her person. Both phones are the full app, already linked. No sign-up needed; the AI is real.</p>
+    </div>
+    <div class="actions">
+      <button class="btn" id="reset">Reset demo</button>
+      <a class="btn primary" href="/">Use PCOSphere yourself</a>
+    </div>
+  </header>
+
+  <section class="guide" aria-label="Try this">
+    <ol>
+      <li><strong>Check in as Riya.</strong> Tap Quick check-in, pick a feeling or two, and get one small next step.</li>
+      <li><strong>Open an area.</strong> Try Craving kitchen for recipes, or Move menu for a routine.</li>
+      <li><strong>Talk to PCOSphere.</strong> Vent, or ask anything about PCOS.</li>
+      <li><strong>Nudge Arjun.</strong> Home → Your person → Send a gentle nudge → now. Watch his phone.</li>
+    </ol>
+  </section>
+
+  <div class="switch" role="group" aria-label="Choose phone">
+    <button id="show-her" aria-pressed="true">Riya's phone</button>
+    <button id="show-him" aria-pressed="false">Arjun's phone</button>
+  </div>
+
+  <main class="phones">
+    <figure id="her">
+      <figcaption>Riya <span>· has PCOS</span></figcaption>
+      <div class="phone"><iframe title="Riya's PCOSphere" src="/?demo=her"></iframe></div>
+    </figure>
+    <figure id="him">
+      <figcaption>Arjun <span>· her person</span></figcaption>
+      <div class="phone"><iframe title="Arjun's PCOSphere" src="/?demo=him"></iframe></div>
+    </figure>
+  </main>
+
+  <footer>Demo data stays in this browser and never touches real accounts. General wellness ideas, not medical advice.</footer>
+
+  <script>
+    // Phone switch on small screens
+    const her = document.getElementById("her"), him = document.getElementById("him");
+    const bHer = document.getElementById("show-her"), bHim = document.getElementById("show-him");
+    function show(which) {
+      const mobile = matchMedia("(max-width: 900px)").matches;
+      her.toggleAttribute("hidden-on-mobile", mobile && which !== "her");
+      him.toggleAttribute("hidden-on-mobile", mobile && which !== "him");
+      bHer.setAttribute("aria-pressed", which === "her");
+      bHim.setAttribute("aria-pressed", which === "him");
+    }
+    bHer.onclick = () => show("her");
+    bHim.onclick = () => show("him");
+    show("her");
+    // On a phone, hint that something arrived on Arjun's side
+    window.addEventListener("storage", (e) => {
+      if (e.key === "pcosphere.demo.shared" && matchMedia("(max-width: 900px)").matches && bHer.getAttribute("aria-pressed") === "true") {
+        bHim.textContent = "Arjun's phone 🔔";
+      }
+    });
+    bHim.addEventListener("click", () => { bHim.textContent = "Arjun's phone"; });
+    // Reset: clear only the demo's own data, then reload both phones
+    document.getElementById("reset").onclick = () => {
+      Object.keys(localStorage).filter((k) => k.startsWith("pcosphere.demo.")).forEach((k) => localStorage.removeItem(k));
+      document.querySelectorAll("iframe").forEach((f) => { f.src = f.src; });
+    };
+  </script>
+</body>
+</html>

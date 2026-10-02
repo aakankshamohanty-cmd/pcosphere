@@ -461,3 +461,22 @@ textarea.input { resize: none; min-height: 80px; }
 .how-link { display: inline-block; font-size: 13px; font-weight: 600; color: var(--cat-ink); margin-top: 4px; text-decoration: none; }
 .symptom h2 { font-size: 24px; }
 .symptom .mini-head { color: var(--accent); }
+
+/* ---------- Demo & banners ---------- */
+.demo-link {
+  display: block; text-decoration: none; text-align: center; margin: 4px 0 8px; padding: 14px 16px;
+  border: var(--border-w) dashed var(--accent); border-radius: var(--radius); color: var(--ink);
+}
+.demo-link strong { display: block; color: var(--accent); }
+.demo-link span { font-size: 14px; color: var(--muted); }
+.banner {
+  position: fixed; top: calc(10px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%);
+  width: min(440px, calc(100% - 20px)); display: flex; gap: 12px; align-items: center; z-index: 20;
+  background: rgba(250, 248, 244, .96); color: #2A2420; border-radius: 18px; padding: 12px 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.18); backdrop-filter: blur(10px); animation: drop .35s ease both;
+}
+.banner svg { width: 34px; height: 34px; flex: none; border-radius: 8px; }
+.banner strong { display: block; font-size: 14px; }
+.banner span { font-size: 14px; color: #5C554F; }
+.banner.out { opacity: 0; transform: translate(-50%, -12px); transition: all .5s ease; }
+@keyframes drop { from { opacity: 0; transform: translate(-50%, -16px); } to { opacity: 1; transform: translate(-50%, 0); } }

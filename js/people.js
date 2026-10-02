@@ -5,6 +5,7 @@
 import { FACTS } from "./content.js";
 import { store } from "./store.js";
 import { loadFirebase, currentUser, signIn, signOutUser, api, redirectPending, firebaseReady, rememberDevice, restoreDevice, forgetDevice } from "./account.js";
+import { DEMO, onDemoChange } from "./demo.js";
 import { notificationStatus, enableNotifications, sendTestNotification, installSteps, canPromptInstall, promptInstall, isStandalone, registerServiceWorker } from "./notify.js";
 
 let ctx;           // helpers from app.js: { ui, go, render, rerenderInPlace, topbar, esc, ICON, toast, profile, helpedIdeas }
@@ -12,7 +13,7 @@ let templates = null;
 let poll = null;
 let syncTimer = null;
 
-const PENDING_ACCEPT = "pcosphere.pendingAccept";
+const PENDING_ACCEPT = DEMO ? `pcosphere.demo.${DEMO}.pendingAccept` : "pcosphere.pendingAccept";
 const RELATIONS = ["partner", "best friend", "friend", "mum", "dad", "sibling", "cousin", "someone close"];
 const SHOW_UP = [
   ["Ask, then listen.", "\"How are you, really?\" and let her lead. You don't have to fix anything."],
@@ -38,7 +39,7 @@ const state = {
 };
 
 // ---------- Setup ----------
-const CACHE = "pcosphere.peopleCache";
+const CACHE = DEMO ? `pcosphere.demo.${DEMO}.peopleCache` : "pcosphere.peopleCache";
 function saveCache() {
   try { localStorage.setItem(CACHE, JSON.stringify({ user: state.user, links: state.links })); } catch {}
 }
@@ -59,7 +60,13 @@ export function setup(helpers) {
 }
 
 export async function boot() {
-  registerServiceWorker();
+  if (DEMO) {
+    // The other demo phone changed something: catch up instantly
+    onDemoChange(async () => { await refreshLinks(); await refreshInbox(); ctx.render(); });
+    setInterval(refreshInbox, 5000);
+  } else {
+    registerServiceWorker();
+  }
   // Tapping a notification while the app is open: refresh the ideas
   navigator.serviceWorker?.addEventListener("message", (e) => { if (e.data?.type === "hint-opened") refreshInbox(); });
   // Opening the app again (e.g. from a notification): check for new ideas straight away
@@ -182,14 +189,16 @@ async function refreshLinks() {
 }
 
 async function refreshInbox() {
-  if (!state.user) return;
+  if (!state.user || store.data.profile.role !== "supporter") return; // only her person receives ideas
   await loadFirebase(); // make sure sign-in is restored, or the server will refuse the request
   const r = await api("/api/hint", { action: "inbox" });
   if (r.ok) {
+    const beforeIds = new Set(state.inbox.map((h) => h.id));
     const before = state.inbox.map((h) => h.id).join();
     const firstLoad = !state.inboxLoaded;
     state.inbox = r.data.hints || [];
     state.inboxLoaded = true;
+    if (!firstLoad && state.inbox.some((h) => !beforeIds.has(h.id))) banner("A little idea for today 💛");
     if ((firstLoad || before !== state.inbox.map((h) => h.id).join()) && ctx.ui.screen === "supporterHome") ctx.render();
   }
 }
@@ -203,6 +212,18 @@ export function prewarm(root) {
   }
 }
 
+// Looks like a phone notification; used in the demo and when an idea arrives while the app is open
+function banner(text) {
+  document.querySelector(".banner")?.remove();
+  const el = document.createElement("div");
+  el.className = "banner";
+  el.setAttribute("role", "status");
+  el.innerHTML = `<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#5F7F63"/><circle cx="16" cy="16" r="7" fill="none" stroke="#F6F1E7" stroke-width="2.6"/><circle cx="22.5" cy="9.5" r="2.6" fill="#F6F1E7"/></svg><div><strong>PCOSphere</strong><span>${ctx.esc(text)}</span></div>`;
+  document.body.appendChild(el);
+  setTimeout(() => el.classList.add("out"), 4200);
+  setTimeout(() => el.remove(), 4800);
+}
+
 export function isLinked() {
   return state.links.mine.length > 0;
 }
@@ -214,7 +235,7 @@ export function homeCards() {
   let html = "";
 
   // "Did they reach out?" for recent nudges (private to her)
-  const pending = store.data.nudges.filter((n) => n.outcome === null && Date.now() - n.ts < 3 * 86400000 && Date.now() - n.ts > (n.mode === "now" ? 5 : 20) * 60000);
+  const pending = store.data.nudges.filter((n) => n.outcome === null && Date.now() - n.ts < 3 * 86400000 && Date.now() - n.ts > (DEMO ? 0 : (n.mode === "now" ? 5 : 20) * 60000));
   const n = pending[pending.length - 1];
   if (n) {
     html += `
@@ -267,6 +288,7 @@ export function suggestionCard() {
 
 export function settingsSection() {
   const { esc, ICON } = ctx;
+  if (DEMO) return `<div class="settings-group"><h3>Account</h3><p class="muted" style="font-size:14px">You're in the demo as ${DEMO === "him" ? "Arjun" : "Riya"}. Nothing here touches a real account.</p></div>`;
   const acc = store.data.account;
   return `
   <div class="settings-group">
@@ -283,6 +305,7 @@ export function settingsSection() {
 
 // ---------- Notifications & install ----------
 function NotifyCard({ compact = false } = {}) {
+  if (DEMO) return compact ? `<p class="muted" style="font-size:14px">In the demo, notifications appear as a banner at the top of this phone.</p>` : "";
   const status = notificationStatus();
   if (status === "on") {
     return compact ? `
@@ -316,7 +339,7 @@ function NotifyCard({ compact = false } = {}) {
 }
 
 export function InstallSection() {
-  if (isStandalone()) return "";
+  if (isStandalone() || DEMO) return "";
   return `
   <div class="settings-group">
     <h3>Add PCOSphere to your Home Screen</h3>
@@ -602,11 +625,12 @@ function SupporterSettings() {
       <h3>Theme</h3>
       ${ctx.themePicker()}
     </div>
+    ${DEMO ? "" : `
     <div class="settings-group">
       <h3>Account</h3>
       <p class="muted" style="font-size:14px;margin-bottom:10px">Signed in as ${esc(store.data.account.email || "")}</p>
       <button class="list-btn" data-action="sign-out">Sign out <span class="chev">${ICON.chev}</span></button>
-    </div>
+    </div>`}
   </section>`;
 }
 

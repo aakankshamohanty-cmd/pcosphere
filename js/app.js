@@ -127,6 +127,10 @@ function Welcome() {
         <span class="chev">${ICON.chev}</span>
       </button>
     </div>
+    <a class="demo-link" href="/demo.html">
+      <strong>Just looking? See both sides</strong>
+      <span>Try her app and her person's app side by side. No sign-up needed.</span>
+    </a>
     <p style="text-align:center"><button class="btn-link" data-action="sign-in">Already use PCOSphere? Sign in</button></p>
   </section>`;
 }

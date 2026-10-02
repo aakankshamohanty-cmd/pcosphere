@@ -2,6 +2,8 @@
 // Firebase is only loaded when someone signs in or opens an invite, so the app stays light otherwise.
 // This config is public by design; the database itself is locked and only the server can use it.
 
+import { DEMO, DEMO_USER, demoApi } from "./demo.js";
+
 export const SDK = "https://www.gstatic.com/firebasejs/12.19.0";
 const REDIRECT_FLAG = "pcosphere.redirect";
 
@@ -26,6 +28,7 @@ export const firebaseReady = () => loaded;
 let fb = null; // { app, auth, mod }
 
 export function loadFirebase() {
+  if (DEMO) { loaded = true; fb = { app: null, auth: { currentUser: DEMO_USER }, mod: null }; return Promise.resolve(fb); }
   if (!ready) {
     ready = (async () => {
       const { initializeApp } = await import(`${SDK}/firebase-app.js`);
@@ -55,6 +58,7 @@ export async function currentUser() {
 }
 
 export async function signIn() {
+  if (DEMO) return DEMO_USER;
   const { auth, mod } = await loadFirebase();
   const provider = new mod.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
@@ -82,6 +86,7 @@ const DEVICE_KEY = "pcosphere.deviceKey";
 
 // After a real Google sign-in: ask the server for a private key for this phone
 export async function rememberDevice() {
+  if (DEMO) return;
   try { if (localStorage.getItem(DEVICE_KEY)) return; } catch { return; }
   const r = await api("/api/session", { action: "create" });
   if (r.ok && r.data.key) { try { localStorage.setItem(DEVICE_KEY, r.data.key); } catch {} }
@@ -89,6 +94,7 @@ export async function rememberDevice() {
 
 // On launch, if Google forgot the login: sign back in quietly with the phone's key
 export async function restoreDevice() {
+  if (DEMO) return DEMO_USER;
   let key = null;
   try { key = localStorage.getItem(DEVICE_KEY); } catch {}
   if (!key) return null;
@@ -107,6 +113,7 @@ export async function restoreDevice() {
 }
 
 export async function forgetDevice() {
+  if (DEMO) return;
   let key = null;
   try { key = localStorage.getItem(DEVICE_KEY); localStorage.removeItem(DEVICE_KEY); } catch {}
   if (key) await api("/api/session", { action: "revoke", key });
@@ -117,6 +124,7 @@ export function redirectPending() {
 }
 
 export async function signOutUser() {
+  if (DEMO) return;
   const { auth, mod } = await loadFirebase();
   await mod.signOut(auth);
 }
@@ -124,6 +132,7 @@ export async function signOutUser() {
 // POST to one of our /api endpoints, with the signed-in user's ID token attached.
 // Returns { ok, status, data }.
 export async function api(path, body, timeoutMs = 15000) {
+  if (DEMO) return demoApi(path, body);
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), timeoutMs);
   try {

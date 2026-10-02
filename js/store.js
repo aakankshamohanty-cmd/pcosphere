@@ -1,9 +1,20 @@
 // Everything PCOSphere remembers lives here, on this device only (localStorage).
 // Later, signed-in users will also sync their profile and "what helped" to their account.
 
-const KEY = "pcosphere.v1";
+import { DEMO, demoProfile } from "./demo.js";
+
+// The demo phones keep their own separate data, never mixed with a real user's
+const KEY = DEMO ? `pcosphere.demo.${DEMO}` : "pcosphere.v1";
 
 function defaults() {
+  if (DEMO) {
+    return {
+      profile: demoProfile(),
+      history: DEMO === "her" ? [{ ts: Date.now() - 86400000, ideaId: "stroll", title: "A ten-minute stroll, no goal", category: "move", outcome: "better" }] : [],
+      checkins: [], chat: [], usage: { day: "", count: 0 },
+      account: { signedIn: true, dismissedSigninNudge: true }, nudges: [],
+    };
+  }
   return {
     profile: { name: "", areas: [], theme: "cottage", role: null, onboarded: false },
     history: [],   // what she tried and how it went: { ts, ideaId, title, category, outcome }
