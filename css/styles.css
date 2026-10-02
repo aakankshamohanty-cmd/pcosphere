@@ -431,3 +431,33 @@ textarea.input { resize: none; min-height: 80px; }
 .notify-card { margin-bottom: 14px; background: var(--accent-soft); border-color: transparent; box-shadow: none; }
 [data-theme="pop"] .notify-card { border-color: var(--line); }
 .steps-list { margin: 6px 0 0; padding-left: 22px; display: grid; gap: 6px; font-size: 15px; }
+
+/* ---------- Area pages ---------- */
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tile {
+  text-align: left; border: var(--border-w) solid transparent; border-radius: 18px; padding: 16px 14px; min-height: 92px;
+  background: var(--cat-bg); color: var(--ink); display: flex; flex-direction: column; justify-content: space-between; gap: 8px;
+}
+[data-theme="pop"] .tile { border-color: var(--line); box-shadow: var(--shadow); }
+.tile strong { font-family: var(--heading); font-style: var(--heading-style); font-weight: 500; font-size: 18px; line-height: 1.2; }
+.tile span { font-size: 13px; color: var(--cat-ink); font-weight: 600; }
+.tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.tool {
+  border: var(--border-w) solid transparent; border-radius: 18px; padding: 16px 10px; background: var(--cat-bg); color: var(--ink);
+  display: grid; gap: 4px; text-align: center; min-height: 80px; place-content: center;
+}
+[data-theme="pop"] .tool { border-color: var(--line); }
+.tool strong { font-size: 16px; }
+.tool span { font-size: 12px; color: var(--cat-ink); }
+.link-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
+.link-list a { display: block; padding: 10px 2px; font-weight: 500; text-decoration: none; color: var(--ink); }
+.link-list a:hover { color: var(--accent); }
+.mini-head { font-size: 13px; font-weight: 600; color: var(--cat-ink, var(--muted)); margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .04em; }
+.recipe h3, .idea > h3 { font-family: var(--heading); font-style: var(--heading-style); font-weight: 500; font-size: 22px; margin-top: 2px; }
+.recipe { margin-top: 14px; }
+.recipe ul, .symptom ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.idea ol.moves { counter-reset: s; }
+.moves .how { display: block; font-size: 14px; opacity: .8; margin-top: 2px; }
+.how-link { display: inline-block; font-size: 13px; font-weight: 600; color: var(--cat-ink); margin-top: 4px; text-decoration: none; }
+.symptom h2 { font-size: 24px; }
+.symptom .mini-head { color: var(--accent); }

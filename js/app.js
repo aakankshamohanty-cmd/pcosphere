@@ -3,6 +3,7 @@ import { AREAS, THEMES, FEELINGS, TIMES, PLACES, CATEGORIES, FACTS, needsCare, p
 import { store } from "./store.js";
 import { askAI, guessFeelings, DAILY_CHAT_LIMIT } from "./ai.js";
 import * as people from "./people.js";
+import * as areas from "./areas.js";
 
 // ---------- Icons ----------
 const ICON = {
@@ -214,6 +215,8 @@ function Home() {
       <span class="chev">${ICON.chev}</span>
     </button>
 
+    ${areas.homeTiles()}
+
     ${people.homeCards()}
 
     ${helped.length ? `
@@ -408,7 +411,10 @@ function FollowUp() {
       <p class="reply">${esc(ui.reply)}</p>
       <div class="stack">
         ${ui.outcome === "skipped" ? `<button class="btn btn-primary" data-action="smaller">Give me something even smaller</button>` : ""}
-        ${ui.returnTo === "chat"
+        ${ui.returnTo === "area"
+          ? `<button class="btn ${ui.outcome === "skipped" ? "btn-ghost" : "btn-primary"}" data-action="open-area" data-id="${ui.area}">Back to ${areas.AREA_PAGES[ui.area]?.title || "your area"}</button>
+             <button class="btn btn-ghost" data-action="home">Done for now</button>`
+          : ui.returnTo === "chat"
           ? `<button class="btn ${ui.outcome === "skipped" ? "btn-ghost" : "btn-primary"}" data-action="open-chat">Back to our chat</button>
              <button class="btn btn-ghost" data-action="home">Done for now</button>`
           : `<button class="btn ${ui.outcome === "skipped" ? "btn-ghost" : "btn-primary"}" data-action="home">Done for now</button>
@@ -488,7 +494,7 @@ function About() {
 }
 
 function render() {
-  const screens = { ...people.screens, welcome: Welcome, supporter: people.screens.supporterHome, setup: Setup, home: Home, checkin: Checkin, thinking: Thinking, suggestion: Suggestion, doing: Doing, followup: FollowUp, settings: Settings, about: About, chat: Chat };
+  const screens = { ...people.screens, ...areas.screens, welcome: Welcome, supporter: people.screens.supporterHome, setup: Setup, home: Home, checkin: Checkin, thinking: Thinking, suggestion: Suggestion, doing: Doing, followup: FollowUp, settings: Settings, about: About, chat: Chat };
   document.body.dataset.screen = ui.screen;
   $app.innerHTML = (screens[ui.screen] || Home)();
   if (ui.screen === "doing") startActivity();
@@ -641,6 +647,7 @@ document.addEventListener("click", (e) => {
   if (!el) return;
   const { action, id } = el.dataset;
   if (people.ACTIONS.has(action)) { people.handle(action, el); return; }
+  if (areas.ACTIONS.has(action)) { areas.handle(action, el); return; }
   const c = ui.checkin;
   const p = profile();
 
@@ -809,6 +816,11 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+areas.setup({
+  ui, go, render, rerenderInPlace, topbar, esc, ICON, toast, profile,
+  startChat: (text) => { ui.returnTo = "chat"; go("chat"); sendChat(text); },
+  startIdea: (idea, returnTo) => { ui.options = [idea]; ui.optionIndex = 0; ui.returnTo = returnTo; go("doing"); },
+});
 people.setup({
   ui, go, render, rerenderInPlace, topbar, esc, ICON, toast, profile, helpedIdeas, applyTheme,
   themePicker: () => ThemePicker(),
