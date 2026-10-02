@@ -498,6 +498,7 @@ function render() {
   document.body.dataset.screen = ui.screen;
   $app.innerHTML = (screens[ui.screen] || Home)();
   if (ui.screen === "doing") startActivity();
+  people.prewarm($app);
   if (ui.screen === "chat") {
     const last = $app.querySelector("#msgs .msg:last-child");
     last?.scrollIntoView({ block: "end" });

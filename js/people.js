@@ -147,6 +147,15 @@ async function refreshInbox() {
   }
 }
 
+// Load Google sign-in ahead of time whenever a sign-in button is on screen.
+// Browsers (Safari especially) only allow the sign-in popup if it opens right after the tap,
+// so it must not wait for a download first.
+export function prewarm(root) {
+  if (root.querySelector('[data-action="sign-in"], [data-action="accept"], [data-action="invite-create"], [data-action="notif-enable"]')) {
+    loadFirebase().catch(() => {});
+  }
+}
+
 export function isLinked() {
   return state.links.mine.length > 0;
 }
