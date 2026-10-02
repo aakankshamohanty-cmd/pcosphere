@@ -62,6 +62,8 @@ export async function boot() {
   registerServiceWorker();
   // Tapping a notification while the app is open: refresh the ideas
   navigator.serviceWorker?.addEventListener("message", (e) => { if (e.data?.type === "hint-opened") refreshInbox(); });
+  // Opening the app again (e.g. from a notification): check for new ideas straight away
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") refreshInbox(); });
   // An invite link looks like pcosphere.vercel.app/?invite=ABC123
   const params = new URLSearchParams(location.search);
   const code = params.get("invite");
@@ -80,7 +82,10 @@ export async function boot() {
     await loadFirebase();
     let u = await currentUser();
     if (!u && store.data.account.signedIn) u = await restoreDevice();
-    if (u) await afterSignIn(u, { quiet: true });
+    if (u) {
+      await afterSignIn(u, { quiet: true });
+      if (store.data.profile.role === "supporter") refreshInbox();
+    }
     else if (store.data.account.signedIn) {
       store.data.account.signedIn = false; store.save();
       state.user = null; state.links = { mine: [], supporting: [], invites: [] }; clearCache();
@@ -178,11 +183,14 @@ async function refreshLinks() {
 
 async function refreshInbox() {
   if (!state.user) return;
+  await loadFirebase(); // make sure sign-in is restored, or the server will refuse the request
   const r = await api("/api/hint", { action: "inbox" });
   if (r.ok) {
     const before = state.inbox.map((h) => h.id).join();
+    const firstLoad = !state.inboxLoaded;
     state.inbox = r.data.hints || [];
-    if (before !== state.inbox.map((h) => h.id).join() && ctx.ui.screen === "supporterHome") ctx.render();
+    state.inboxLoaded = true;
+    if ((firstLoad || before !== state.inbox.map((h) => h.id).join()) && ctx.ui.screen === "supporterHome") ctx.render();
   }
 }
 
@@ -558,7 +566,8 @@ function SupporterHome() {
         <p class="eyebrow">A little idea · ${when(latest.deliveredAt)}</p>
         <p class="hint-text">${esc(latest.text)}</p>
         ${latest.seen ? `<p class="muted" style="font-size:14px">Noted 💛</p>` : `<button class="btn btn-primary" data-action="hint-seen" data-id="${esc(latest.id)}">Got it 💛</button>`}
-      </div>` : `
+      </div>` : !state.inboxLoaded ? `
+      <div class="card"><p class="muted">Checking for new ideas…</p></div>` : `
       <div class="card">
         <h3>No ideas right now</h3>
         <p class="muted" style="margin-top:6px;font-size:14px">When there's a gentle idea for showing up, it'll appear here. You don't need to wait for one, though.</p>
