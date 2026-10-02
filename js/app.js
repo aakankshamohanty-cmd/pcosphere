@@ -88,6 +88,7 @@ function toast(msg) {
 
 function go(screen) {
   clearInterval(timer);
+  ui.forceAnim = true;
   ui.screen = screen;
   if (screen !== "chat") window.scrollTo(0, 0);
   render();
@@ -495,8 +496,16 @@ function About() {
 
 function render() {
   const screens = { ...people.screens, ...areas.screens, welcome: Welcome, supporter: people.screens.supporterHome, setup: Setup, home: Home, checkin: Checkin, thinking: Thinking, suggestion: Suggestion, doing: Doing, followup: FollowUp, settings: Settings, about: About, chat: Chat };
+  const sameScreen = document.body.dataset.screen === ui.screen && !ui.forceAnim;
+  ui.forceAnim = false;
   document.body.dataset.screen = ui.screen;
+  const y = window.scrollY;
   $app.innerHTML = (screens[ui.screen] || Home)();
+  // Re-drawing the same screen (new data arrived): no slide-in, keep the scroll position
+  if (sameScreen) {
+    $app.querySelector(".screen")?.style.setProperty("animation", "none");
+    if (ui.screen !== "chat") window.scrollTo(0, y);
+  }
   if (ui.screen === "doing") startActivity();
   people.prewarm($app);
   if (ui.screen === "chat") {

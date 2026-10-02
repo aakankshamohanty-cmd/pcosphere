@@ -92,6 +92,7 @@ export async function api(path, body, timeoutMs = 15000) {
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), timeoutMs);
   try {
+    if (ready && !loaded) { try { await ready; } catch {} } // wait for sign-in to be restored first
     const user = fb?.auth.currentUser || null;
     const token = user ? await user.getIdToken() : null;
     const r = await fetch(path, {

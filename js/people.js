@@ -38,9 +38,24 @@ const state = {
 };
 
 // ---------- Setup ----------
+const CACHE = "pcosphere.peopleCache";
+function saveCache() {
+  try { localStorage.setItem(CACHE, JSON.stringify({ user: state.user, links: state.links })); } catch {}
+}
+function clearCache() {
+  try { localStorage.removeItem(CACHE); } catch {}
+}
+
 export function setup(helpers) {
   ctx = helpers;
   store.onSave(scheduleSync);
+  // Show the signed-in screens straight away on launch; Firebase confirms a moment later
+  if (store.data.account.signedIn) {
+    try {
+      const c = JSON.parse(localStorage.getItem(CACHE));
+      if (c?.user) { state.user = c.user; state.links = c.links || state.links; state.loaded = true; }
+    } catch {}
+  }
 }
 
 export async function boot() {
@@ -65,7 +80,10 @@ export async function boot() {
     await loadFirebase();
     const u = await currentUser();
     if (u) await afterSignIn(u, { quiet: true });
-    else if (store.data.account.signedIn) { store.data.account.signedIn = false; store.save(); }
+    else if (store.data.account.signedIn) {
+      store.data.account.signedIn = false; store.save();
+      state.user = null; state.links = { mine: [], supporting: [], invites: [] }; clearCache();
+    }
     // Coming back from a full-page sign-in in the middle of accepting an invite: finish it
     let pending = null;
     try { pending = JSON.parse(localStorage.getItem(PENDING_ACCEPT)); } catch {}
@@ -152,7 +170,7 @@ async function pushProfile() {
 async function refreshLinks() {
   if (!state.user) return;
   const r = await api("/api/link", { action: "list" });
-  if (r.ok) state.links = { mine: r.data.mine || [], supporting: r.data.supporting || [], invites: r.data.invites || [] };
+  if (r.ok) { state.links = { mine: r.data.mine || [], supporting: r.data.supporting || [], invites: r.data.invites || [] }; saveCache(); }
   state.loaded = true;
 }
 
@@ -601,6 +619,7 @@ export async function handle(action, el) {
       state.user = null;
       state.links = { mine: [], supporting: [], invites: [] };
       clearInterval(poll); poll = null;
+      clearCache();
       store.data.account = { signedIn: false, dismissedSigninNudge: true };
       store.save();
       toast("Signed out");
