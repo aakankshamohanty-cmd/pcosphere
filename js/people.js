@@ -4,7 +4,8 @@
 
 import { FACTS } from "./content.js";
 import { store } from "./store.js";
-import { loadFirebase, currentUser, signIn, signOutUser, api } from "./account.js";
+import { loadFirebase, currentUser, signIn, signOutUser, api, redirectPending } from "./account.js";
+import { notificationStatus, enableNotifications, sendTestNotification, installSteps, canPromptInstall, promptInstall, isStandalone, registerServiceWorker } from "./notify.js";
 
 let ctx;           // helpers from app.js: { ui, go, render, rerenderInPlace, topbar, esc, ICON, toast, profile, helpedIdeas }
 let templates = null;
@@ -42,6 +43,9 @@ export function setup(helpers) {
 }
 
 export async function boot() {
+  registerServiceWorker();
+  // Tapping a notification while the app is open: refresh the ideas
+  navigator.serviceWorker?.addEventListener("message", (e) => { if (e.data?.type === "hint-opened") refreshInbox(); });
   // An invite link looks like pcosphere.vercel.app/?invite=ABC123
   const params = new URLSearchParams(location.search);
   const code = params.get("invite");
@@ -54,7 +58,7 @@ export async function boot() {
       if (ctx.ui.screen === "accept") ctx.render();
     });
   }
-  if (store.data.account.signedIn || code) {
+  if (store.data.account.signedIn || code || redirectPending()) {
     await loadFirebase();
     const u = await currentUser();
     if (u) await afterSignIn(u, { quiet: true });
@@ -217,6 +221,52 @@ export function settingsSection() {
       : `<p class="muted" style="font-size:14px;margin-bottom:10px">Sign in to keep your setup if you change phones, and to link your person.</p>
          <button class="list-btn" data-action="sign-in">Sign in with Google <span class="chev">${ICON.chev}</span></button>`}
     ${store.data.profile.role !== "supporter" ? `<button class="list-btn" data-action="people">Your people <span class="chev">${ICON.chev}</span></button>` : ""}
+  </div>
+  ${InstallSection()}`;
+}
+
+// ---------- Notifications & install ----------
+function NotifyCard({ compact = false } = {}) {
+  const status = notificationStatus();
+  if (status === "on") {
+    return compact ? `
+      <p class="muted" style="font-size:14px;margin-bottom:10px">Notifications are on for this phone.</p>
+      <button class="list-btn" data-action="notif-test">Send me a test notification <span class="chev">${ctx.ICON.chev}</span></button>` : "";
+  }
+  if (status === "needs-install") {
+    return `
+    <div class="card notify-card">
+      <h3>Get ideas as notifications</h3>
+      <p class="muted" style="margin:4px 0 10px;font-size:14px">On iPhone, notifications work once PCOSphere is on your Home Screen (iOS 16.4 or newer):</p>
+      <ol class="steps-list">${installSteps().map((x) => `<li>${x}</li>`).join("")}</ol>
+    </div>`;
+  }
+  if (status === "denied") {
+    return `
+    <div class="card notify-card">
+      <h3>Notifications are blocked</h3>
+      <p class="muted" style="margin-top:4px;font-size:14px">To get gentle ideas as notifications, allow them for PCOSphere in your phone's settings. You'll still see ideas here whenever you open the app.</p>
+    </div>`;
+  }
+  if (status === "unsupported") {
+    return compact ? `<p class="muted" style="font-size:14px">This browser can't show notifications. Ideas still appear here whenever you open the app.</p>` : "";
+  }
+  return `
+  <div class="card notify-card">
+    <h3>Turn on notifications</h3>
+    <p class="muted" style="margin:4px 0 12px;font-size:14px">So ideas reach you even when the app is closed. Your lock screen will only say "A little idea for today 💛".</p>
+    <button class="btn btn-primary" data-action="notif-enable" ${state.busy ? "disabled" : ""}>${state.busy ? "Turning on…" : "Turn on notifications"}</button>
+  </div>`;
+}
+
+export function InstallSection() {
+  if (isStandalone()) return "";
+  return `
+  <div class="settings-group">
+    <h3>Add PCOSphere to your Home Screen</h3>
+    <p class="muted" style="font-size:14px;margin-bottom:10px">It opens full-screen like an app, no store needed.</p>
+    ${canPromptInstall() ? `<button class="btn btn-soft" data-action="install-app">Install PCOSphere</button>`
+      : `<ol class="steps-list">${installSteps().map((x) => `<li>${x}</li>`).join("")}</ol>`}
   </div>`;
 }
 
@@ -454,6 +504,7 @@ function SupporterHome() {
       <p class="eyebrow">You're ${esc(names.join(" & "))}'s person 💛</p>
       <h1>Ways to show up today</h1>
     </div>
+    ${NotifyCard()}
     ${latest ? `
       <div class="hint-card ${latest.seen ? "" : "fresh"}">
         <p class="eyebrow">A little idea · ${when(latest.deliveredAt)}</p>
@@ -486,6 +537,11 @@ function SupporterSettings() {
         <div class="card person"><div><strong>${esc(l.ownerName)}</strong></div><button class="btn-link" data-action="unlink" data-id="${esc(l.id)}">Unlink</button></div>`).join("") || `<p class="muted">No one yet.</p>`}
     </div>
     <div class="settings-group">
+      <h3>Notifications</h3>
+      ${NotifyCard({ compact: true }) || `<p class="muted" style="font-size:14px">Not on yet. Turn them on from your home screen.</p>`}
+    </div>
+    ${InstallSection()}
+    <div class="settings-group">
       <h3>Theme</h3>
       ${ctx.themePicker()}
     </div>
@@ -503,7 +559,7 @@ export const screens = { people: People, invite: Invite, nudge: Nudge, nudgeSent
 export const ACTIONS = new Set([
   "sign-in", "sign-out", "dismiss-signin", "people", "invite-new", "invite-rel", "invite-create", "invite-share", "invite-copy",
   "invite-cancel", "unlink", "nudge-start", "nudge-who", "nudge-kind", "nudge-shuffle", "nudge-mode", "nudge-send",
-  "nudge-deliver-now", "nudge-outcome", "accept", "hint-seen", "supporter-settings",
+  "nudge-deliver-now", "nudge-outcome", "accept", "hint-seen", "supporter-settings", "notif-enable", "notif-test", "install-app",
 ]);
 export async function handle(action, el) {
   const { ui, go, render, toast } = ctx;
@@ -622,6 +678,22 @@ export async function handle(action, el) {
       return true;
     }
     case "supporter-settings": go("supporterSettings"); return true;
+    case "notif-enable": {
+      if (!state.user) { toast("Please sign in first"); return true; }
+      state.busy = true; render();
+      const r = await enableNotifications();
+      state.busy = false;
+      if (r.ok) {
+        const sent = await sendTestNotification();
+        toast(sent ? "Notifications on. We sent you a test 💛" : "Notifications on");
+      } else {
+        toast(r.reason === "denied" ? "Notifications were blocked" : "Couldn't turn on notifications. Try again in a moment.");
+      }
+      render();
+      return true;
+    }
+    case "notif-test": toast((await sendTestNotification()) ? "Test sent. Check your notifications" : "Couldn't send a test right now"); return true;
+    case "install-app": await promptInstall(); render(); return true;
   }
   return false;
 }

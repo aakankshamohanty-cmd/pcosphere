@@ -5,24 +5,14 @@
 
 const { admin, db, verifyUser } = require("./_lib/firebase");
 const TEMPLATES = require("../js/hint-templates.json").kinds;
+const { deliverDue } = require("./_lib/deliver");
+const { sendToUser } = require("./_lib/push");
 
 const MAX_HINTS_PER_DAY = 6;
 const DELAY_MIN = 20;
 const DELAY_MAX = 60;
 const clean = (s, max) => String(s ?? "").replace(/\s+/g, " ").trim().slice(0, max);
 const ms = (ts) => ts?.toMillis?.() || 0;
-
-// Turns pending hints whose time has come into delivered ones. Used by the inbox and (later) the scheduler.
-async function deliverDue(query) {
-  const snap = await query.where("delivered", "==", false).get();
-  const now = Date.now();
-  const due = snap.docs.filter((d) => ms(d.data().deliverAt) <= now);
-  if (!due.length) return [];
-  const batch = db().batch();
-  for (const d of due) batch.update(d.ref, { delivered: true, deliveredAt: admin.firestore.FieldValue.serverTimestamp() });
-  await batch.commit();
-  return due.map((d) => ({ id: d.id, ...d.data() }));
-}
 
 module.exports = async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
@@ -72,11 +62,15 @@ module.exports = async function handler(req, res) {
           seen: false,
           pushed: false,
         });
-        sent.push({ id: ref.id, linkId, supporterName: l.supporterName, deliverInMinutes: delayMin });
+        sent.push({ id: ref.id, linkId, supporterName: l.supporterName, supporterUid: l.supporterUid, deliverInMinutes: delayMin });
       }
       if (!sent.length) return res.status(400).json({ error: "Those links aren't active anymore." });
+      if (mode === "now") {
+        const uids = [...new Set(sent.map((x) => x.supporterUid))];
+        await Promise.all(uids.map((uid) => sendToUser(uid).catch(() => null)));
+      }
       await userRef.set({ hintDay: today, hintCount: sentToday + sent.length }, { merge: true });
-      return res.status(200).json({ sent });
+      return res.status(200).json({ sent: sent.map(({ supporterUid, ...rest }) => rest) });
     }
 
     if (action === "inbox") {
@@ -123,4 +117,3 @@ module.exports = async function handler(req, res) {
   }
 };
 
-module.exports.deliverDue = deliverDue;

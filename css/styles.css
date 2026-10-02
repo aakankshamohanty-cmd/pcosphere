@@ -428,3 +428,6 @@ textarea.input { resize: none; min-height: 80px; }
 [data-theme="pop"] .hint-card.fresh { border-color: var(--line); }
 .hint-text { font-family: var(--heading); font-style: var(--heading-style); font-size: 24px; line-height: 1.3; margin: 4px 0 16px; }
 .nudge-offer { background: var(--surface-2); border-color: transparent; box-shadow: none; }
+.notify-card { margin-bottom: 14px; background: var(--accent-soft); border-color: transparent; box-shadow: none; }
+[data-theme="pop"] .notify-card { border-color: var(--line); }
+.steps-list { margin: 6px 0 0; padding-left: 22px; display: grid; gap: 6px; font-size: 15px; }

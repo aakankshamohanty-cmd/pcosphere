@@ -2,10 +2,17 @@
 // Firebase is only loaded when someone signs in or opens an invite, so the app stays light otherwise.
 // This config is public by design; the database itself is locked and only the server can use it.
 
-const SDK = "https://www.gstatic.com/firebasejs/12.19.0";
+export const SDK = "https://www.gstatic.com/firebasejs/12.19.0";
+const REDIRECT_FLAG = "pcosphere.redirect";
+
+// When opened from the Home Screen (iPhone especially), sign-in works best as a full-page redirect
+// through our own domain. Vercel forwards /__/auth to Firebase (see vercel.json).
+export const isStandalone = () => window.matchMedia?.("(display-mode: standalone)").matches || navigator.standalone === true;
+const useOwnDomain = isStandalone() && location.hostname === "pcosphere.vercel.app";
+
 const CONFIG = {
   apiKey: "AIzaSyCiNulDd5CZThAQwI5jqXUwYi8GTNY2jnc",
-  authDomain: "pcosphere-24012.firebaseapp.com",
+  authDomain: useOwnDomain ? location.hostname : "pcosphere-24012.firebaseapp.com",
   projectId: "pcosphere-24012",
   storageBucket: "pcosphere-24012.firebasestorage.app",
   messagingSenderId: "591481585948",
@@ -25,6 +32,7 @@ export function loadFirebase() {
       fb = { app, auth, mod };
       // Finish a redirect-style sign-in, if one was in progress
       try { await mod.getRedirectResult(auth); } catch {}
+      try { localStorage.removeItem(REDIRECT_FLAG); } catch {}
       await auth.authStateReady();
       return fb;
     })();
@@ -41,18 +49,25 @@ export async function signIn() {
   const { auth, mod } = await loadFirebase();
   const provider = new mod.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: "select_account" });
+  const redirect = async () => {
+    try { localStorage.setItem(REDIRECT_FLAG, "1"); } catch {}
+    await mod.signInWithRedirect(auth, provider);
+    return null;
+  };
+  if (useOwnDomain) return redirect();
   try {
     const result = await mod.signInWithPopup(auth, provider);
     return result.user;
   } catch (e) {
     // Some phones block popups: fall back to a full-page sign-in
-    if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment", "auth/web-storage-unsupported"].includes(e.code)) {
-      await mod.signInWithRedirect(auth, provider);
-      return null;
-    }
+    if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment", "auth/web-storage-unsupported"].includes(e.code)) return redirect();
     if (e.code === "auth/popup-closed-by-user" || e.code === "auth/cancelled-popup-request") return null;
     throw e;
   }
+}
+
+export function redirectPending() {
+  try { return localStorage.getItem(REDIRECT_FLAG) === "1"; } catch { return false; }
 }
 
 export async function signOutUser() {
