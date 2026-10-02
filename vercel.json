@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/__/auth/:path*", "destination": "https://pcosphere-24012.firebaseapp.com/__/auth/:path*" }
+  ]
+}

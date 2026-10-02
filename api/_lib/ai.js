@@ -73,9 +73,9 @@ async function callGroq(model, system, messages) {
 }
 
 // Returns { data, provider } or throws if every provider failed.
-async function askAI(system, messages) {
+async function askAI(system, messages, { skipGemini = false } = {}) {
   const errors = [];
-  for (const model of GEMINI_MODELS) {
+  for (const model of skipGemini ? [] : GEMINI_MODELS) {
     try { return { data: await callGemini(model, system, messages), provider: `gemini:${model}` }; }
     catch (e) {
       errors.push(e.message);

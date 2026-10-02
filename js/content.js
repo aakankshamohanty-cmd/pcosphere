@@ -161,6 +161,7 @@ export const FACTS = [
 // Red-flag phrases. If we see these, we show real help before anything else.
 const SAFETY_PATTERNS = [
   /suicid/i, /kill (myself|me)/i, /end (it all|my life)/i, /want to die/i, /self[- ]?harm/i, /hurt(ing)? myself/i,
+  /(don'?t|do not) want to (be here|live|exist)/i, /no (reason|point) (to|in) (live|living)/i, /better off without me/i,
   /faint(ed|ing)?/i, /passed out/i, /chest pain/i, /can'?t breathe/i,
   /soak(ing|ed)? (through|a pad)/i, /(very |really )?heavy bleeding/i, /bleeding (a lot|heavily|so much)/i,
 ];

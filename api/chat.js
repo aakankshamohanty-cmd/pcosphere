@@ -102,7 +102,8 @@ module.exports = async function handler(req, res) {
   const system = BASE + (mode === "checkin" ? MODE_CHECKIN : MODE_CHAT) + aboutHer(ctx);
 
   try {
-    const { data, provider } = await askAI(system, messages);
+    // testProvider lets us check the Groq backup on its own; it can only make things slower, never unsafe
+    const { data, provider } = await askAI(system, messages, { skipGemini: body.testProvider === "groq" });
     let suggestion = null;
     const s = data.suggestion;
     if (s && CATEGORIES.includes(s.category) && s.title) {

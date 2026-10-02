@@ -2,6 +2,7 @@
 import { AREAS, THEMES, FEELINGS, TIMES, PLACES, CATEGORIES, FACTS, needsCare, pickIdeas, reflectionFor, FOLLOWUPS, IDEAS } from "./content.js";
 import { store } from "./store.js";
 import { askAI, guessFeelings, DAILY_CHAT_LIMIT } from "./ai.js";
+import * as people from "./people.js";
 
 // ---------- Icons ----------
 const ICON = {
@@ -19,7 +20,7 @@ const brandMark = '<svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true
 
 // ---------- State for the current session ----------
 const ui = {
-  screen: store.data.profile.onboarded ? (store.data.profile.role === "supporter" ? "supporter" : "home") : "welcome",
+  screen: store.data.profile.onboarded ? (store.data.profile.role === "supporter" ? "supporterHome" : "home") : "welcome",
   setupStep: 1,
   checkin: freshCheckin(),
   options: [],
@@ -124,22 +125,7 @@ function Welcome() {
         <span class="chev">${ICON.chev}</span>
       </button>
     </div>
-  </section>`;
-}
-
-function Supporter() {
-  return `
-  ${topbar({ back: "to-welcome" })}
-  <section class="screen">
-    <div class="hero">
-      <p class="eyebrow">Supporting someone</p>
-      <h1>That's a lovely thing to do.</h1>
-      <p>When she invites you from her PCOSphere, open her invite link on this phone. You'll agree together on how it works, and then you'll get gentle ideas for showing up for her.</p>
-    </div>
-    <div class="card" style="margin-top:22px">
-      <h3>Waiting for an invite</h3>
-      <p class="muted" style="margin-top:6px">Ask her to tap <strong>Invite my person</strong> in her app and send you the link.</p>
-    </div>
+    <p style="text-align:center"><button class="btn-link" data-action="sign-in">Already use PCOSphere? Sign in</button></p>
   </section>`;
 }
 
@@ -227,6 +213,8 @@ function Home() {
       <span><strong>Talk to PCOSphere</strong><span class="sub">${store.data.chat.length ? "Pick up where you left off" : "Vent, ask a question, or think something through"}</span></span>
       <span class="chev">${ICON.chev}</span>
     </button>
+
+    ${people.homeCards()}
 
     ${helped.length ? `
     <div class="section-title"><h3>Things that have helped you</h3></div>
@@ -324,6 +312,7 @@ function Suggestion() {
       <button class="btn btn-primary" data-action="do">Let's do it</button>
       ${ui.options.length > 1 ? `<button class="btn btn-ghost" data-action="another">Not feeling it, show me something else</button>` : ""}
     </div>
+    ${people.suggestionCard()}
     <p class="source-note">${ui.source === "ai" && ui.optionIndex === 0 ? "Tailored to your check-in by AI · " : ""}General wellness idea, not medical advice</p>
     <p style="text-align:center"><button class="btn-link" data-action="talk-checkin">Want to talk it through instead?</button></p>
   </section>`;
@@ -475,6 +464,8 @@ function Settings() {
       ${ThemePicker()}
     </div>
 
+    ${people.settingsSection()}
+
     <div class="settings-group">
       <h3>About & privacy</h3>
       <button class="list-btn" data-action="about">How PCOSphere works <span class="chev">${ICON.chev}</span></button>
@@ -497,7 +488,7 @@ function About() {
 }
 
 function render() {
-  const screens = { welcome: Welcome, supporter: Supporter, setup: Setup, home: Home, checkin: Checkin, thinking: Thinking, suggestion: Suggestion, doing: Doing, followup: FollowUp, settings: Settings, about: About, chat: Chat };
+  const screens = { ...people.screens, welcome: Welcome, supporter: people.screens.supporterHome, setup: Setup, home: Home, checkin: Checkin, thinking: Thinking, suggestion: Suggestion, doing: Doing, followup: FollowUp, settings: Settings, about: About, chat: Chat };
   document.body.dataset.screen = ui.screen;
   $app.innerHTML = (screens[ui.screen] || Home)();
   if (ui.screen === "doing") startActivity();
@@ -649,6 +640,7 @@ document.addEventListener("click", (e) => {
   const el = e.target.closest("[data-action]");
   if (!el) return;
   const { action, id } = el.dataset;
+  if (people.ACTIONS.has(action)) { people.handle(action, el); return; }
   const c = ui.checkin;
   const p = profile();
 
@@ -660,7 +652,7 @@ document.addEventListener("click", (e) => {
       break;
     case "path-them":
       store.setProfile({ role: "supporter", onboarded: true });
-      go("supporter");
+      go("supporterHome");
       break;
     case "to-welcome":
       store.setProfile({ role: null, onboarded: false });
@@ -776,9 +768,9 @@ document.addEventListener("click", (e) => {
       break;
     }
     case "about-back": go(ui.aboutFrom || "settings"); break;
-    case "home": go("home"); break;
+    case "home": go(profile().role === "supporter" ? "supporterHome" : "home"); break;
     case "next-fact": ui.factIndex += 1; rerenderInPlace(el); break;
-    case "settings": go("settings"); break;
+    case "settings": go(profile().role === "supporter" ? "supporterSettings" : "settings"); break;
     case "save-name":
       store.setProfile({ name: document.getElementById("name").value.trim().slice(0, 30) });
       toast("Saved");
@@ -817,5 +809,10 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+people.setup({
+  ui, go, render, rerenderInPlace, topbar, esc, ICON, toast, profile, helpedIdeas, applyTheme,
+  themePicker: () => ThemePicker(),
+});
 applyTheme(profile().theme);
 render();
+people.boot();

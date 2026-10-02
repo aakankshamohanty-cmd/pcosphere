@@ -10,6 +10,8 @@ function defaults() {
     checkins: [],  // her check-ins: { ts, feelings, time, place, note }
     chat: [],      // the "Talk to PCOSphere" conversation: { role, text, suggestion?, care?, quickReplies? }
     usage: { day: "", count: 0 }, // messages sent today, for the gentle daily limit
+    account: { signedIn: false, dismissedSigninNudge: false },
+    nudges: [],    // hints she chose to send: { ts, names, kind, mode, outcome: null | "asked" | "not-yet" }
   };
 }
 
@@ -18,7 +20,7 @@ function load() {
     const saved = JSON.parse(localStorage.getItem(KEY));
     if (!saved) return defaults();
     const d = defaults();
-    return { ...d, ...saved, profile: { ...d.profile, ...saved.profile } };
+    return { ...d, ...saved, profile: { ...d.profile, ...saved.profile }, account: { ...d.account, ...saved.account } };
   } catch {
     return defaults();
   }
@@ -26,8 +28,11 @@ function load() {
 
 export const store = {
   data: load(),
+  listeners: [],
+  onSave(fn) { this.listeners.push(fn); },
   save() {
     try { localStorage.setItem(KEY, JSON.stringify(this.data)); } catch { /* private mode: keep working in memory */ }
+    for (const fn of this.listeners) fn();
   },
   setProfile(patch) {
     Object.assign(this.data.profile, patch);

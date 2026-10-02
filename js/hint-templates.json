@@ -1,0 +1,53 @@
+{
+  "_note": "Gentle, practical hints a support person receives. Never say she asked. {name} is replaced with her first name.",
+  "kinds": {
+    "talk": {
+      "label": "Ask how I'm really doing",
+      "lines": [
+        "Today could be a nice day to ask {name} how she's really doing, and just listen.",
+        "A simple \"how are you, really?\" to {name} today could mean a lot. No need to fix anything.",
+        "Maybe check in with {name} today. Ask an open question and let her lead."
+      ]
+    },
+    "company": {
+      "label": "Some easy company",
+      "lines": [
+        "{name} might enjoy some easy company today. A call, a quiet evening, or just hanging out.",
+        "How about some low-key time with {name} today? Nothing planned, just being around.",
+        "A cosy, no-pressure evening with {name} could be a lovely idea."
+      ]
+    },
+    "treat": {
+      "label": "A little treat I like",
+      "lines": [
+        "A small treat could brighten {name}'s day. Something she loves, no occasion needed.",
+        "Surprising {name} with something small she enjoys could be a sweet gesture today.",
+        "Today might be a good day for a little \"thought of you\" treat for {name}."
+      ]
+    },
+    "walk": {
+      "label": "A walk together",
+      "lines": [
+        "How about inviting {name} for an easy walk today? No agenda, just fresh air together.",
+        "A slow walk with {name} could be a nice way to spend a little time together today.",
+        "Fancy a stroll? {name} might enjoy an easy walk and a chat."
+      ]
+    },
+    "practical": {
+      "label": "Help with something practical",
+      "lines": [
+        "Could you take one small task off {name}'s plate today? Practical help can mean a lot.",
+        "Offering {name} a hand with something everyday, like food, an errand or a chore, could be really kind today.",
+        "Today's idea: ask {name} if there's one thing you could handle for her."
+      ]
+    },
+    "space": {
+      "label": "Some space, kindly",
+      "lines": [
+        "{name} might appreciate some calm space today. A kind message without expecting a reply could be perfect.",
+        "A gentle \"thinking of you, no need to reply\" to {name} could be just right today.",
+        "Today might be a day to give {name} a little room, with a warm note that you're around."
+      ]
+    }
+  }
+}
