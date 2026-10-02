@@ -4,7 +4,7 @@
 
 import { FACTS } from "./content.js";
 import { store } from "./store.js";
-import { loadFirebase, currentUser, signIn, signOutUser, api, redirectPending, firebaseReady } from "./account.js";
+import { loadFirebase, currentUser, signIn, signOutUser, api, redirectPending, firebaseReady, rememberDevice, restoreDevice, forgetDevice } from "./account.js";
 import { notificationStatus, enableNotifications, sendTestNotification, installSteps, canPromptInstall, promptInstall, isStandalone, registerServiceWorker } from "./notify.js";
 
 let ctx;           // helpers from app.js: { ui, go, render, rerenderInPlace, topbar, esc, ICON, toast, profile, helpedIdeas }
@@ -78,7 +78,8 @@ export async function boot() {
   try { hasPending = !!localStorage.getItem(PENDING_ACCEPT); } catch {}
   if (store.data.account.signedIn || code || redirectPending() || hasPending) {
     await loadFirebase();
-    const u = await currentUser();
+    let u = await currentUser();
+    if (!u && store.data.account.signedIn) u = await restoreDevice();
     if (u) await afterSignIn(u, { quiet: true });
     else if (store.data.account.signedIn) {
       store.data.account.signedIn = false; store.save();
@@ -129,6 +130,7 @@ async function afterSignIn(u, { quiet = false } = {}) {
   store.data.account.signedIn = true;
   store.data.account.email = u.email;
   store.save();
+  rememberDevice();
   await restoreOrSaveProfile();
   await refreshLinks();
   if (!quiet) ctx.toast("Signed in. Your setup is safe now.");
@@ -615,6 +617,7 @@ export async function handle(action, el) {
       if (!firebaseReady()) { toast("One moment, getting sign-in ready…"); loadFirebase().then(() => render()); return true; }
       await doSignIn(); if (ui.screen === "welcome" && state.user) go(store.data.profile.onboarded ? homeFor() : "welcome"); return true;
     case "sign-out":
+      await forgetDevice();
       await signOutUser();
       state.user = null;
       state.links = { mine: [], supporting: [], invites: [] };

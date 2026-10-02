@@ -77,6 +77,41 @@ export async function signIn() {
   }
 }
 
+// ---------- Remember this phone ----------
+const DEVICE_KEY = "pcosphere.deviceKey";
+
+// After a real Google sign-in: ask the server for a private key for this phone
+export async function rememberDevice() {
+  try { if (localStorage.getItem(DEVICE_KEY)) return; } catch { return; }
+  const r = await api("/api/session", { action: "create" });
+  if (r.ok && r.data.key) { try { localStorage.setItem(DEVICE_KEY, r.data.key); } catch {} }
+}
+
+// On launch, if Google forgot the login: sign back in quietly with the phone's key
+export async function restoreDevice() {
+  let key = null;
+  try { key = localStorage.getItem(DEVICE_KEY); } catch {}
+  if (!key) return null;
+  const r = await api("/api/session", { action: "restore", key });
+  if (!r.ok || !r.data.token) {
+    if (r.status === 401) { try { localStorage.removeItem(DEVICE_KEY); } catch {} }
+    return null;
+  }
+  const { auth, mod } = await loadFirebase();
+  try {
+    const cred = await mod.signInWithCustomToken(auth, r.data.token);
+    return cred.user;
+  } catch {
+    return null;
+  }
+}
+
+export async function forgetDevice() {
+  let key = null;
+  try { key = localStorage.getItem(DEVICE_KEY); localStorage.removeItem(DEVICE_KEY); } catch {}
+  if (key) await api("/api/session", { action: "revoke", key });
+}
+
 export function redirectPending() {
   try { return localStorage.getItem(REDIRECT_FLAG) === "1"; } catch { return false; }
 }
