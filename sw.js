@@ -11,7 +11,7 @@ self.addEventListener("push", (event) => {
   const data = payload.data || payload || {};
   const title = data.title || "PCOSphere";
   const options = {
-    body: data.body || "A little idea for today 🩷",
+    body: data.body || "A little idea for today 🌸",
     icon: "/icons/icon-192.png",
     badge: "/icons/icon-192.png",
     tag: data.tag || "pcosphere-hint",

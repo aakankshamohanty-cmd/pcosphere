@@ -199,7 +199,7 @@ async function refreshInbox() {
     const firstLoad = !state.inboxLoaded;
     state.inbox = r.data.hints || [];
     state.inboxLoaded = true;
-    if (!firstLoad && state.inbox.some((h) => !beforeIds.has(h.id))) banner("A little idea for today 🩷");
+    if (!firstLoad && state.inbox.some((h) => !beforeIds.has(h.id))) banner("A little idea for today 🌸");
     if ((firstLoad || before !== state.inbox.map((h) => h.id).join()) && ["supporterHome", "home"].includes(ctx.ui.screen)) ctx.render();
   }
 }
@@ -244,7 +244,7 @@ export function homeCards() {
       <h3>Did ${esc(n.names.join(" or "))} reach out?</h3>
       <p class="muted" style="margin:4px 0 12px;font-size:14px">Just for you. They'll never see this.</p>
       <div class="row">
-        <button class="btn btn-primary" data-action="nudge-outcome" data-id="${n.ts}" data-outcome="asked">They asked 🩷</button>
+        <button class="btn btn-primary" data-action="nudge-outcome" data-id="${n.ts}" data-outcome="asked">They asked 💕</button>
         <button class="btn btn-ghost" data-action="nudge-outcome" data-id="${n.ts}" data-outcome="not-yet">Not yet</button>
       </div>
     </div>`;
@@ -258,7 +258,7 @@ export function homeCards() {
     html += `
     <button class="path supporting-card ${latest && !latest.seen ? "fresh" : ""}" style="margin-top:12px" data-action="supporting-open">
       <span class="bubble-ico" style="background:var(--calm);color:var(--calm-ink)">${ICON.me}</span>
-      <span><strong>You're ${esc(owners.join(" & "))}'s person 🩷</strong>
+      <span><strong>You're ${esc(owners.join(" & "))}'s person 💕</strong>
       <span class="sub">${latest ? (latest.seen ? "See ways to show up" : "New: a little idea for showing up") : "See ways to show up"}</span></span>
       <span class="chev">${ICON.chev}</span>
     </button>`;
@@ -348,7 +348,7 @@ function NotifyCard({ compact = false } = {}) {
   return `
   <div class="card notify-card">
     <h3>Turn on notifications</h3>
-    <p class="muted" style="margin:4px 0 12px;font-size:14px">So ideas reach you even when the app is closed. Your lock screen will only say "A little idea for today 🩷".</p>
+    <p class="muted" style="margin:4px 0 12px;font-size:14px">So ideas reach you even when the app is closed. Your lock screen will only say "A little idea for today 🌸".</p>
     <button class="btn btn-primary" data-action="notif-enable" ${state.busy ? "disabled" : ""}>${state.busy ? "Turning on…" : "Turn on notifications"}</button>
   </div>`;
 }
@@ -607,7 +607,7 @@ function SupporterHome() {
   ${alsoMe ? topbar({ back: "home" }) : topbar({ settings: true })}
   <section class="screen">
     <div class="greet">
-      <p class="eyebrow">You're ${esc(names.join(" & "))}'s person 🩷</p>
+      <p class="eyebrow">You're ${esc(names.join(" & "))}'s person 💕</p>
       <h1>Ways to show up today</h1>
     </div>
     ${NotifyCard()}
@@ -615,7 +615,7 @@ function SupporterHome() {
       <div class="hint-card ${latest.seen ? "" : "fresh"}">
         <p class="eyebrow">A little idea · ${when(latest.deliveredAt)}</p>
         <p class="hint-text">${esc(latest.text)}</p>
-        ${latest.seen ? `<p class="muted" style="font-size:14px">Noted 🩷</p>` : `<button class="btn btn-primary" data-action="hint-seen" data-id="${esc(latest.id)}">Got it 🩷</button>`}
+        ${latest.seen ? `<p class="muted" style="font-size:14px">Noted 💕</p>` : `<button class="btn btn-primary" data-action="hint-seen" data-id="${esc(latest.id)}">Got it 💕</button>`}
       </div>` : !state.inboxLoaded ? `
       <div class="card"><p class="muted">Checking for new ideas…</p></div>` : `
       <div class="card">
@@ -747,7 +747,7 @@ export async function handle(action, el) {
     case "nudge-mode": state.nudge.mode = id; ctx.rerenderInPlace(el); return true;
     case "nudge-send": {
       const n = state.nudge;
-      if (n.mode === "private") { toast("Kept private 🩷"); go("home"); return true; }
+      if (n.mode === "private") { toast("Kept private 🌸"); go("home"); return true; }
       state.busy = true; state.error = ""; render();
       const r = await api("/api/hint", { action: "send", linkIds: n.linkIds, kind: n.kind, index: n.index, mode: n.mode });
       state.busy = false;
@@ -807,7 +807,7 @@ export async function handle(action, el) {
       state.busy = false;
       if (r.ok) {
         const sent = await sendTestNotification();
-        toast(sent ? "Notifications on. We sent you a test 🩷" : "Notifications on");
+        toast(sent ? "Notifications on. We sent you a test 🌸" : "Notifications on");
       } else {
         toast(r.reason === "denied" ? "Notifications were blocked" : "Couldn't turn on notifications. Try again in a moment.");
       }
@@ -835,7 +835,7 @@ async function acceptInvite(supporterName) {
     store.setProfile({ role: "supporter", onboarded: true, name: supporterName || p.name });
   }
   await refreshLinks();
-  toast(`You're now ${r.data.ownerName}'s person 🩷`);
+  toast(`You're now ${r.data.ownerName}'s person 💕`);
   refreshInbox();
   go(store.data.profile.role === "me" ? "home" : "supporterHome");
   return true;

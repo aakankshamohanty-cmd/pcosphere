@@ -30,7 +30,7 @@ It starts with a simple question: *how's today going?*
   - 🧠 **Calm corner:** breathing, grounding, brain dump, a listening chat, guided videos, and real help (Tele-MANAS 14416, 112)
   - 💪 **Move menu:** energy + time + place → a short routine with how-to videos
   - 🌸 **Symptom helper:** plain-language info, "see a doctor if", and questions to ask your doctor
-- **Support for two:** she can link up to 2 trusted people (partner, friend, family). After a check-in she can send them a gentle, practical idea, **now**, **20–60 minutes later** so it feels natural, or **keep it private**. The hint never says she asked: *"Today could be a nice day to ask Riya how she's really doing, and just listen."* Their lock screen only says *"A little idea for today 🩷"*. **Support goes both ways:** a mum and daughter, or two sisters, can each use PCOSphere for themselves *and* be each other's person on the same account.
+- **Support for two:** she can link up to 2 trusted people (partner, friend, family). After a check-in she can send them a gentle, practical idea, **now**, **20–60 minutes later** so it feels natural, or **keep it private**. The hint never says she asked: *"Today could be a nice day to ask Riya how she's really doing, and just listen."* Their lock screen only says *"A little idea for today 🌸"*. **Support goes both ways:** a mum and daughter, or two sisters, can each use PCOSphere for themselves *and* be each other's person on the same account.
 - **Make it yours:** 4 themes (Fairy cottage, Midnight gothic, Blush, Color pop), and it installs to the Home Screen like an app.
 
 ## What makes it different
