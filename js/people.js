@@ -4,7 +4,7 @@
 
 import { FACTS } from "./content.js";
 import { store } from "./store.js";
-import { loadFirebase, currentUser, signIn, signOutUser, api, redirectPending } from "./account.js";
+import { loadFirebase, currentUser, signIn, signOutUser, api, redirectPending, firebaseReady } from "./account.js";
 import { notificationStatus, enableNotifications, sendTestNotification, installSteps, canPromptInstall, promptInstall, isStandalone, registerServiceWorker } from "./notify.js";
 
 let ctx;           // helpers from app.js: { ui, go, render, rerenderInPlace, topbar, esc, ICON, toast, profile, helpedIdeas }
@@ -171,7 +171,7 @@ async function refreshInbox() {
 // so it must not wait for a download first.
 export function prewarm(root) {
   if (root.querySelector('[data-action="sign-in"], [data-action="accept"], [data-action="invite-create"], [data-action="notif-enable"]')) {
-    loadFirebase().catch(() => {});
+    if (!firebaseReady()) loadFirebase().then(() => ctx.render()).catch(() => {});
   }
 }
 
@@ -305,7 +305,7 @@ function SignInGate(title, text) {
     <h3>${title}</h3>
     <p class="muted" style="margin:6px 0 14px;font-size:14px">${text}</p>
     ${state.error ? `<p class="error">${ctx.esc(state.error)}</p>` : ""}
-    <button class="btn btn-primary" data-action="sign-in" ${state.busy ? "disabled" : ""}>${state.busy ? "Signing in…" : "Sign in with Google"}</button>
+    <button class="btn btn-primary" data-action="sign-in" ${state.busy || !firebaseReady() ? "disabled" : ""}>${state.busy ? "Signing in…" : firebaseReady() ? "Sign in with Google" : "Getting sign-in ready…"}</button>
   </div>`;
 }
 
@@ -496,7 +496,7 @@ function Accept() {
       <input class="input" id="supporter-name" maxlength="30" value="${esc(info.personName || "")}" placeholder="Your name" />
     </div>
     ${state.error ? `<p class="error">${esc(state.error)}</p>` : ""}
-    <button class="btn btn-primary" data-action="accept" ${state.busy ? "disabled" : ""}>${state.busy ? "One moment…" : state.user ? "I agree" : "I agree, sign in with Google"}</button>
+    <button class="btn btn-primary" data-action="accept" ${state.busy || !firebaseReady() ? "disabled" : ""}>${state.busy ? "One moment…" : !firebaseReady() ? "Getting sign-in ready…" : state.user ? "I agree" : "I agree, sign in with Google"}</button>
     <p class="muted" style="font-size:12px;text-align:center;margin-top:10px">Signing in makes sure the ideas reach you, and only you.</p>
   </section>`;
 }
@@ -593,7 +593,9 @@ export async function handle(action, el) {
   const { ui, go, render, toast } = ctx;
   const id = el.dataset.id;
   switch (action) {
-    case "sign-in": await doSignIn(); if (ui.screen === "welcome" && state.user) go(store.data.profile.onboarded ? homeFor() : "welcome"); return true;
+    case "sign-in":
+      if (!firebaseReady()) { toast("One moment, getting sign-in ready…"); loadFirebase().then(() => render()); return true; }
+      await doSignIn(); if (ui.screen === "welcome" && state.user) go(store.data.profile.onboarded ? homeFor() : "welcome"); return true;
     case "sign-out":
       await signOutUser();
       state.user = null;

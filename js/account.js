@@ -21,6 +21,8 @@ const CONFIG = {
 };
 
 let ready = null;
+let loaded = false;
+export const firebaseReady = () => loaded;
 let fb = null; // { app, auth, mod }
 
 export function loadFirebase() {
@@ -29,12 +31,18 @@ export function loadFirebase() {
       const { initializeApp } = await import(`${SDK}/firebase-app.js`);
       const mod = await import(`${SDK}/firebase-auth.js`);
       const app = initializeApp(CONFIG);
-      const auth = mod.getAuth(app);
+      // Save the login in localStorage first: iPhone Home Screen apps don't reliably keep
+      // IndexedDB between launches, which signed people out after closing the app.
+      const auth = mod.initializeAuth(app, {
+        persistence: [mod.browserLocalPersistence, mod.indexedDBLocalPersistence],
+        popupRedirectResolver: mod.browserPopupRedirectResolver,
+      });
       fb = { app, auth, mod };
       // Finish a redirect-style sign-in, if one was in progress
       try { await mod.getRedirectResult(auth); } catch {}
       try { localStorage.removeItem(REDIRECT_FLAG); } catch {}
       await auth.authStateReady();
+      loaded = true;
       return fb;
     })();
   }
