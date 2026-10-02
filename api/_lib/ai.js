@@ -26,7 +26,7 @@ async function callGemini(model, system, messages) {
   if (!key) throw new Error("no gemini key");
   // Gemini wants the conversation to start with the user
   const turns = messages.slice(messages.findIndex((m) => m.role === "user"));
-  const t = withTimeout(9000);
+  const t = withTimeout(7000);
   try {
     const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: "POST",

@@ -127,7 +127,7 @@ function Welcome() {
         <span class="chev">${ICON.chev}</span>
       </button>
     </div>
-    <a class="demo-link" href="/demo.html">
+    <a class="demo-link" href="/demo">
       <strong>Just looking? See both sides</strong>
       <span>Try her app and her person's app side by side. No sign-up needed.</span>
     </a>
