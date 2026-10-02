@@ -1,6 +1,7 @@
 // PCOSphere: quick check-in -> one realistic next step -> kind follow-up.
 import { AREAS, THEMES, FEELINGS, TIMES, PLACES, CATEGORIES, FACTS, needsCare, pickIdeas, reflectionFor, FOLLOWUPS, IDEAS } from "./content.js";
 import { store } from "./store.js";
+import { askAI, guessFeelings, DAILY_CHAT_LIMIT } from "./ai.js";
 
 // ---------- Icons ----------
 const ICON = {
@@ -10,6 +11,9 @@ const ICON = {
   check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>',
   me: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.6-7 10-7 10z"/></svg>',
   them: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 4.5a3 3 0 0 1 0 6M18 14.2c1.8.8 3 2.6 3 4.8"/></svg>',
+  chat: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20.5l1.4-4.9A8 8 0 1 1 21 12z"/></svg>',
+  send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  fresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>',
 };
 const brandMark = '<svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="var(--accent)"/><circle cx="16" cy="16" r="7" fill="none" stroke="var(--accent-ink)" stroke-width="2.6"/><circle cx="22.5" cy="9.5" r="2.6" fill="var(--accent-ink)"/></svg>';
 
@@ -26,6 +30,9 @@ const ui = {
   outcome: null,
   reply: "",
   factIndex: Math.floor(Date.now() / 86400000), // a different fact each day
+  source: "local",     // "ai" when the current suggestion was tailored by AI
+  chatBusy: false,     // waiting for a chat reply
+  returnTo: "home",    // where the follow-up should lead back to
 };
 let timer = null;
 
@@ -80,8 +87,9 @@ function toast(msg) {
 function go(screen) {
   clearInterval(timer);
   ui.screen = screen;
+  if (screen !== "chat") window.scrollTo(0, 0);
   render();
-  window.scrollTo(0, 0);
+  if (screen === "chat") return; // the chat scrolls itself to the latest message
   const h = $app.querySelector("h1, h2");
   if (h) { h.setAttribute("tabindex", "-1"); h.focus({ preventScroll: true }); }
 }
@@ -178,7 +186,7 @@ function Setup() {
     <h1>Make it feel like yours.</h1>
     <p class="muted" style="margin-top:8px">Pick a look. You can switch anytime.</p>
     ${ThemePicker()}
-    <p class="muted" style="font-size:14px;margin-bottom:16px">Your check-ins stay on this phone. Nothing is shared with anyone unless you choose to.</p>
+    <p class="muted" style="font-size:14px;margin-bottom:16px">Your check-ins and chats stay on this phone, and nothing is shared with anyone unless you choose to. AI replies are written by Google Gemini (or Groq as a backup), so they receive what you type. <button class="btn-link" style="padding:0;min-height:0" data-action="about">More about privacy</button></p>
     <button class="btn btn-primary" data-action="setup-done">Let's begin</button>
   </section>`;
 }
@@ -212,6 +220,12 @@ function Home() {
       <h2>Quick check-in</h2>
       <p>A couple of taps, then one small next step that fits your moment.</p>
       <span class="go">Start ${ICON.chev}</span>
+    </button>
+
+    <button class="path" style="margin-top:12px" data-action="open-chat">
+      <span class="bubble-ico" style="background:var(--calm);color:var(--calm-ink)">${ICON.chat}</span>
+      <span><strong>Talk to PCOSphere</strong><span class="sub">${store.data.chat.length ? "Pick up where you left off" : "Vent, ask a question, or think something through"}</span></span>
+      <span class="chev">${ICON.chev}</span>
     </button>
 
     ${helped.length ? `
@@ -263,10 +277,11 @@ function Checkin() {
       <textarea class="input" id="note" maxlength="280" placeholder="e.g. exam at 4, skipped lunch, back hurts">${esc(c.note)}</textarea>
     </div>
 
-    <div class="sticky-cta">
+    <div class="sticky-cta stack">
       <button class="btn btn-primary" data-action="suggest" ${c.feelings.length ? "" : "disabled"}>
         ${c.feelings.length ? "Help me pick one thing" : "Tap how you're feeling"}
       </button>
+      ${c.feelings.length ? `<button class="btn btn-ghost" style="background:var(--bg)" data-action="talk-checkin">Talk it through first</button>` : ""}
     </div>
   </section>`;
 }
@@ -309,7 +324,55 @@ function Suggestion() {
       <button class="btn btn-primary" data-action="do">Let's do it</button>
       ${ui.options.length > 1 ? `<button class="btn btn-ghost" data-action="another">Not feeling it, show me something else</button>` : ""}
     </div>
-    <p class="source-note">General wellness idea, not medical advice</p>
+    <p class="source-note">${ui.source === "ai" && ui.optionIndex === 0 ? "Tailored to your check-in by AI · " : ""}General wellness idea, not medical advice</p>
+    <p style="text-align:center"><button class="btn-link" data-action="talk-checkin">Want to talk it through instead?</button></p>
+  </section>`;
+}
+
+function Chat() {
+  const msgs = store.data.chat;
+  const last = msgs[msgs.length - 1];
+  const limitHit = store.messagesToday() >= DAILY_CHAT_LIMIT;
+  const bubble = (m, i) => {
+    if (m.role === "user") return `<div class="msg msg-user">${esc(m.text)}</div>`;
+    return `
+      <div class="msg msg-ai">
+        ${m.care ? CareNote() : ""}
+        <p>${esc(m.text)}</p>
+        ${m.suggestion ? `
+          <div class="idea idea-mini cat-${m.suggestion.category}">
+            <span class="tag">${CATEGORIES[m.suggestion.category]?.label || ""} · about ${m.suggestion.minutes} min</span>
+            <h3>${esc(m.suggestion.title)}</h3>
+            <p class="why">${esc(m.suggestion.why)}</p>
+            <ol>${m.suggestion.steps.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>
+            <button class="btn btn-primary" data-action="chat-do" data-id="${i}">Let's do it</button>
+          </div>` : ""}
+      </div>`;
+  };
+  return `
+  <header class="topbar">
+    <button class="icon-btn" data-action="home" aria-label="Back">${ICON.back}</button>
+    <strong class="chat-title">Talk to PCOSphere</strong>
+    <button class="icon-btn" data-action="chat-new" aria-label="Start a new chat">${ICON.fresh}</button>
+  </header>
+  <section class="screen chat">
+    <p class="chat-privacy">Saved only on this phone. To write replies, messages are sent to Google Gemini (or Groq as a backup).</p>
+    <div class="msgs" id="msgs">
+      ${msgs.length ? msgs.map(bubble).join("") : `<div class="msg msg-ai"><p>Hi${profile().name ? ` ${esc(profile().name)}` : ""}. What's on your mind? You can vent, ask me something about PCOS, or ask for one small next step.</p></div>`}
+      ${ui.chatBusy ? `<div class="msg msg-ai typing" aria-label="PCOSphere is typing"><i></i><i></i><i></i></div>` : ""}
+    </div>
+    ${!ui.chatBusy && !limitHit ? `
+      <div class="chips quick">
+        ${(last?.role === "assistant" && last.quickReplies?.length ? last.quickReplies : msgs.length ? [] : ["I'm craving something", "I feel low today", "Explain insulin resistance simply"])
+          .map((q) => `<button class="chip" data-action="chat-quick" data-text="${esc(q)}">${esc(q)}</button>`).join("")}
+      </div>` : ""}
+    <form class="composer" data-form="chat">
+      ${limitHit
+        ? `<p class="muted" style="font-size:14px">We've talked a lot today, so let's pick this up tomorrow. Quick check-ins still work anytime.</p>`
+        : `<label class="sr-only" for="chat-input">Message</label>
+           <textarea id="chat-input" class="input" rows="1" maxlength="600" placeholder="Type how you feel…" ${ui.chatBusy ? "disabled" : ""}></textarea>
+           <button class="send" type="submit" aria-label="Send" ${ui.chatBusy ? "disabled" : ""}>${ICON.send}</button>`}
+    </form>
   </section>`;
 }
 
@@ -356,8 +419,11 @@ function FollowUp() {
       <p class="reply">${esc(ui.reply)}</p>
       <div class="stack">
         ${ui.outcome === "skipped" ? `<button class="btn btn-primary" data-action="smaller">Give me something even smaller</button>` : ""}
-        <button class="btn ${ui.outcome === "skipped" ? "btn-ghost" : "btn-primary"}" data-action="home">Done for now</button>
-        <button class="btn btn-ghost" data-action="start-checkin">Check in again</button>
+        ${ui.returnTo === "chat"
+          ? `<button class="btn ${ui.outcome === "skipped" ? "btn-ghost" : "btn-primary"}" data-action="open-chat">Back to our chat</button>
+             <button class="btn btn-ghost" data-action="home">Done for now</button>`
+          : `<button class="btn ${ui.outcome === "skipped" ? "btn-ghost" : "btn-primary"}" data-action="home">Done for now</button>
+             <button class="btn btn-ghost" data-action="start-checkin">Check in again</button>`}
       </div>
       ${today.length ? `
       <div class="section-title"><h3>Today with PCOSphere</h3></div>
@@ -419,20 +485,26 @@ function Settings() {
 
 function About() {
   return `
-  ${topbar({ back: "settings" })}
+  ${topbar({ back: "about-back" })}
   <section class="screen prose">
     <h1 style="margin:4px 0 8px">How PCOSphere works</h1>
     <p>PCOSphere is a warm, low-pressure companion for everyday life with PCOS. You tell it how things are in a few taps, and it suggests <strong>one</strong> realistic next step that fits your time and where you are: a satisfying snack, a short stretch, a calming reset, or permission to rest. Then it asks how it went, and remembers what helps you.</p>
     <p><strong>What it won't do:</strong> diagnose, count calories, call food a "slip", treat movement as payback, or pretend your cycle phase decides what you should eat or feel.</p>
-    <p><strong>Your data:</strong> your check-ins are saved only on this phone. Nothing is shared with anyone unless you choose to.</p>
+    <p><strong>Your data:</strong> your check-ins and chats are saved only on this phone. Nothing is shared with anyone unless you choose to.</p>
+    <p><strong>About the AI:</strong> to write replies and tailor suggestions, your check-in details and chat messages are sent to Google Gemini (or Groq as a backup). On their free plans, these providers may use that text to improve their services, so please don't share anything you'd want kept private. If the AI is unavailable, PCOSphere uses its own built-in ideas instead.</p>
     <p class="muted">General wellness ideas only. Please talk to your doctor about symptoms or treatment. In an emergency call 112. For mental health support, Tele-MANAS is free and 24/7 at 14416.</p>
   </section>`;
 }
 
 function render() {
-  const screens = { welcome: Welcome, supporter: Supporter, setup: Setup, home: Home, checkin: Checkin, thinking: Thinking, suggestion: Suggestion, doing: Doing, followup: FollowUp, settings: Settings, about: About };
+  const screens = { welcome: Welcome, supporter: Supporter, setup: Setup, home: Home, checkin: Checkin, thinking: Thinking, suggestion: Suggestion, doing: Doing, followup: FollowUp, settings: Settings, about: About, chat: Chat };
+  document.body.dataset.screen = ui.screen;
   $app.innerHTML = (screens[ui.screen] || Home)();
   if (ui.screen === "doing") startActivity();
+  if (ui.screen === "chat") {
+    const last = $app.querySelector("#msgs .msg:last-child");
+    last?.scrollIntoView({ block: "end" });
+  }
 }
 
 // Re-render without jumping to the top or losing focus (used for chip taps)
@@ -448,16 +520,93 @@ function rerenderInPlace(from) {
 }
 
 // ---------- The suggestion flow ----------
-function getSuggestion() {
+function timeOfDay() {
+  const h = new Date().getHours();
+  return h < 5 ? "late night" : h < 12 ? "morning" : h < 17 ? "afternoon" : h < 21 ? "evening" : "night";
+}
+
+// What the AI is told about her: only what she chose to share, nothing more
+function aiContext(checkin, candidates = []) {
+  const p = profile();
+  return {
+    name: p.name,
+    areas: p.areas.map((id) => AREAS.find((a) => a.id === id)?.label).filter(Boolean),
+    feelings: checkin ? checkin.feelings.map(feelingLabel) : [],
+    time: checkin?.time,
+    place: checkin ? PLACES.find((x) => x.id === checkin.place)?.label : "",
+    note: checkin?.note || "",
+    timeOfDay: timeOfDay(),
+    helped: helpedIdeas().map((h) => h.title),
+    avoid: store.data.history.slice(-3).map((h) => h.title),
+    candidates: candidates.map((o) => ({ title: o.title, category: o.category, minutes: o.minutes })),
+  };
+}
+
+async function getSuggestion() {
   const c = ui.checkin;
   store.addCheckin({ feelings: c.feelings, time: c.time, place: c.place, note: c.note });
-  ui.options = pickIdeas(c, profile(), store.data.history);
+  const local = pickIdeas(c, profile(), store.data.history);
+  ui.options = local;
   ui.optionIndex = 0;
   ui.reflection = reflectionFor(c, profile().name);
-  ui.firstReflection = ui.reflection;
   ui.care = needsCare(c.note);
+  ui.source = "local";
+  ui.returnTo = "home";
   go("thinking");
-  setTimeout(() => go("suggestion"), 800);
+  const started = Date.now();
+
+  // Skip the AI for worrying notes: the safety message comes first, and the built-in ideas are enough
+  if (!ui.care) {
+    const ai = await askAI({ mode: "checkin", context: aiContext(c, local.slice(0, 4)) }, 12000);
+    if (ai?.suggestion) {
+      const idea = { id: "ai-" + Date.now(), ...ai.suggestion };
+      ui.options = [idea, ...local.filter((o) => o.title.toLowerCase() !== idea.title.toLowerCase()).slice(0, 3)];
+      ui.reflection = ai.reply || ui.reflection;
+      ui.care = ai.care;
+      ui.source = "ai";
+    }
+  }
+  ui.firstReflection = ui.reflection;
+  setTimeout(() => { if (ui.screen === "thinking") go("suggestion"); }, Math.max(0, 800 - (Date.now() - started)));
+}
+
+// ---------- Chat ----------
+function checkinAsMessage(c) {
+  const bits = [c.feelings.map(feelingLabel).join(", ")];
+  bits.push(`${TIMES.find((t) => t.id === c.time)?.label || ""}`, PLACES.find((p) => p.id === c.place)?.label || "");
+  return `Quick check-in: ${bits.filter(Boolean).join(" · ")}${c.note ? `. ${c.note}` : ""}`;
+}
+
+async function sendChat(text, withCheckin = null) {
+  text = text.trim();
+  if (!text || ui.chatBusy) return;
+  if (store.messagesToday() >= DAILY_CHAT_LIMIT) { go("chat"); return; }
+  store.addChat({ role: "user", text });
+  store.countMessage();
+  const care = needsCare(text);
+  ui.chatBusy = true;
+  go("chat");
+
+  const history = store.data.chat.slice(-12).map((m) => ({ role: m.role, text: m.text }));
+  const ai = await askAI({ mode: "chat", messages: history, context: aiContext(withCheckin) });
+  ui.chatBusy = false;
+
+  if (ai) {
+    store.addChat({ role: "assistant", text: ai.reply, suggestion: ai.suggestion, care: ai.care || care, quickReplies: ai.quickReplies });
+  } else {
+    // AI unavailable: offer something useful from the built-in library instead of an error
+    const feelings = withCheckin?.feelings?.length ? withCheckin.feelings : guessFeelings(text);
+    const idea = feelings.length ? pickIdeas({ feelings, time: withCheckin?.time || 10, place: withCheckin?.place || "home" }, profile(), store.data.history)[0] : null;
+    store.addChat({
+      role: "assistant",
+      text: idea ? "I'm having a slow moment connecting, so here's one idea while I catch up." : "I'm having a slow moment connecting. Could you try again in a minute? A quick check-in works anytime too.",
+      suggestion: idea ? { category: idea.category, title: idea.title, minutes: idea.minutes, why: idea.why, steps: idea.steps, kind: idea.kind, id: idea.id } : null,
+      care,
+      quickReplies: ["Try again"],
+      failed: true,
+    });
+  }
+  if (ui.screen === "chat") go("chat");
 }
 
 function startActivity() {
@@ -592,6 +741,41 @@ document.addEventListener("click", (e) => {
       go("suggestion");
       break;
     }
+    case "open-chat": go("chat"); break;
+    case "chat-new":
+      if (!store.data.chat.length || confirm("Start a new chat? This one will be cleared from this phone.")) {
+        store.clearChat();
+        go("chat");
+      }
+      break;
+    case "talk-checkin":
+      // Carry the check-in into the chat so she doesn't have to repeat herself
+      ui.returnTo = "chat";
+      sendChat(checkinAsMessage(ui.checkin), { ...ui.checkin });
+      break;
+    case "chat-quick": {
+      const text = el.dataset.text;
+      const msgs = store.data.chat;
+      if (text === "Try again" && msgs[msgs.length - 1]?.failed) {
+        msgs.pop();
+        const lastUser = msgs.pop();
+        store.save();
+        sendChat(lastUser?.text || "Hi");
+      } else {
+        sendChat(text);
+      }
+      break;
+    }
+    case "chat-do": {
+      const m = store.data.chat[Number(id)];
+      if (!m?.suggestion) break;
+      ui.options = [{ id: m.suggestion.id || "ai-" + m.ts, ...m.suggestion }];
+      ui.optionIndex = 0;
+      ui.returnTo = "chat";
+      go("doing");
+      break;
+    }
+    case "about-back": go(ui.aboutFrom || "settings"); break;
     case "home": go("home"); break;
     case "next-fact": ui.factIndex += 1; rerenderInPlace(el); break;
     case "settings": go("settings"); break;
@@ -599,7 +783,7 @@ document.addEventListener("click", (e) => {
       store.setProfile({ name: document.getElementById("name").value.trim().slice(0, 30) });
       toast("Saved");
       break;
-    case "about": go("about"); break;
+    case "about": ui.aboutFrom = ui.screen; go("about"); break;
     case "reset":
       if (confirm("Clear your name, settings and check-ins from this phone?")) {
         store.reset();
@@ -613,6 +797,24 @@ document.addEventListener("click", (e) => {
 // Keep the typed note without re-rendering (so the keyboard stays open)
 document.addEventListener("input", (e) => {
   if (e.target.id === "note") ui.checkin.note = e.target.value;
+  if (e.target.id === "chat-input") {
+    e.target.style.height = "auto";
+    e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px";
+  }
+});
+
+// Sending a chat message: the send button, or Enter (Shift+Enter for a new line)
+document.addEventListener("submit", (e) => {
+  if (e.target.dataset.form !== "chat") return;
+  e.preventDefault();
+  const input = document.getElementById("chat-input");
+  if (input) sendChat(input.value);
+});
+document.addEventListener("keydown", (e) => {
+  if (e.target.id === "chat-input" && e.key === "Enter" && !e.shiftKey && !e.isComposing) {
+    e.preventDefault();
+    sendChat(e.target.value);
+  }
 });
 
 applyTheme(profile().theme);
