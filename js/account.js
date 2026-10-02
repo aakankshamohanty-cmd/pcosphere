@@ -6,12 +6,10 @@ export const SDK = "https://www.gstatic.com/firebasejs/12.19.0";
 const REDIRECT_FLAG = "pcosphere.redirect";
 
 // Sign-in runs through our own domain (Vercel forwards /__/auth to Firebase, see vercel.json),
-// so iPhones don't block it as "cross-site". On iPhones and Home Screen apps we use a full-page
-// redirect, which is more reliable there than a popup.
+// so iPhones don't block it as "cross-site". We always try a popup first: in an iPhone Home Screen
+// app, a full-page redirect signs in a separate browser layer instead of the app itself.
 export const isStandalone = () => window.matchMedia?.("(display-mode: standalone)").matches || navigator.standalone === true;
-const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 const useOwnDomain = location.hostname === "pcosphere.vercel.app";
-const preferRedirect = useOwnDomain && (isStandalone() || isIOS);
 
 const CONFIG = {
   apiKey: "AIzaSyCiNulDd5CZThAQwI5jqXUwYi8GTNY2jnc",
@@ -57,13 +55,15 @@ export async function signIn() {
     await mod.signInWithRedirect(auth, provider);
     return null;
   };
-  if (preferRedirect) return redirect();
   try {
     const result = await mod.signInWithPopup(auth, provider);
     return result.user;
   } catch (e) {
     // Some phones block popups: fall back to a full-page sign-in
-    if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment", "auth/web-storage-unsupported"].includes(e.code)) return redirect();
+    if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment", "auth/web-storage-unsupported"].includes(e.code)) {
+      if (isStandalone()) throw e;
+      return redirect();
+    }
     if (e.code === "auth/popup-closed-by-user" || e.code === "auth/cancelled-popup-request") return null;
     throw e;
   }

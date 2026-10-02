@@ -98,7 +98,9 @@ async function doSignIn() {
     const u = await signIn();
     if (u) await afterSignIn(u);
   } catch (e) {
-    state.error = "Sign-in didn't work. Please try again.";
+    state.error = e?.code === "auth/popup-blocked"
+      ? "Your phone blocked the sign-in window. Please allow pop-ups for PCOSphere and try again."
+      : `Sign-in didn't work. Please try again.${e?.code ? ` (${e.code})` : ""}`;
   }
   state.busy = false;
   ctx.render();
