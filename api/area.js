@@ -16,7 +16,7 @@ No medical claims. Keep wording short, kind and practical. Reply ONLY with JSON.
 
 const RECIPES = `Task: suggest 3 quick, satisfying recipes for what she's craving.
 Pair carbs with protein and/or fibre (it's often more satisfying), using common Indian kitchen ingredients.
-Every food or drink you suggest must be whole-food based: dals, chana, sprouts, paneer, eggs, curd, vegetables, fruit, oats, millets, nuts and seeds. No added sugar of any kind (no sugar, honey, jaggery, syrups or sweetened drinks); sweetness only from whole fruit, a couple of dates, or a small piece of dark chocolate (70% or more). Never suggest deep-fried, packaged or ultra-processed foods (no sev, namkeen, chips, biscuits, instant noodles, sugary cereals). Still never call any food bad or shameful; simply don't suggest those.
+Every food or drink you suggest must be whole-food based: dals, chana, sprouts, paneer, eggs, curd, vegetables, fruit, oats, millets, nuts and seeds. No added sugar of any kind (no sugar, honey, jaggery, syrups or sweetened drinks); sweetness only from whole fruit, a couple of dates, or a small piece of chocolate with no added sugar (sugar-free or date-sweetened). On period, cramp or bloating days, lean towards warm, comforting food and drinks (dal, khichdi, soups, warm spiced milk without sugar, ginger or jeera water), offered as comfort, never as a cure. Never suggest deep-fried, packaged or ultra-processed foods (no sev, namkeen, chips, biscuits, instant noodles, sugary cereals). Still never call any food bad or shameful; simply don't suggest those.
 If she lists something at home that doesn't fit these rules, quietly leave it out and use the rest.
 Respect her time limit and use what she has at home if she listed anything.
 JSON shape:

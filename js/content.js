@@ -75,12 +75,18 @@ export const IDEAS = [
   { id: "protein-add", category: "nourish", title: "Add one protein to your next meal", minutes: 2, places: ["home", "desk", "out"], tags: ["skipped-meal", "okay", "craving-sweet"],
     why: "A tiny plan, not a diet. Protein on the plate helps many people feel full for longer.",
     steps: ["Think of your next meal", "Pick one: paneer, eggs, dal, curd, tofu, chicken, chana", "That's it. Decision made"], kind: "enjoy" },
-  { id: "warm-drink", category: "nourish", title: "Something warm to sip", minutes: 10, places: ["home", "desk", "out"], tags: ["crampy", "bloated", "on-period", "anxious"],
+  { id: "warm-drink", warm: true, category: "nourish", title: "Something warm to sip", minutes: 10, places: ["home", "desk", "out"], tags: ["crampy", "bloated", "on-period", "anxious"],
     why: "Lots of people find a warm drink comforting when their belly feels off. It's also a nice excuse to pause.",
     steps: ["Make ginger or jeera water, or a cup of unsweetened chai", "Hold the cup and let your shoulders drop", "Sip slowly. A small snack alongside is welcome"], kind: "enjoy" },
-  { id: "choc-almonds", category: "nourish", title: "Dark chocolate (70%+) and a few almonds", minutes: 2, places: ["desk", "home", "out"], tags: ["craving-sweet", "low-mood", "on-period"],
+  { id: "warm-bowl", warm: true, category: "nourish", title: "A warm bowl of moong dal khichdi or soup", minutes: 20, places: ["home"], tags: ["on-period", "crampy", "bloated", "low-energy", "skipped-meal"],
+    why: "On period days, many women find warm, simple food the most comforting. Easy on the tummy, and filling too.",
+    steps: ["Make a quick moong dal khichdi, or heat up a dal or vegetable soup", "Add a little ghee, jeera and a pinch of haldi if you like", "Eat it warm, somewhere cosy"], kind: "enjoy" },
+  { id: "warm-milk", warm: true, category: "nourish", title: "Warm haldi or cinnamon milk, no sugar", minutes: 5, places: ["home"], tags: ["on-period", "crampy", "anxious", "low-mood"],
+    why: "A warm cup is a gentle, comforting way to slow down, especially on period days.",
+    steps: ["Warm a cup of milk (or a plant milk)", "Stir in a pinch of haldi or cinnamon, no sugar", "Sip it slowly with a blanket"], kind: "enjoy" },
+  { id: "choc-almonds", category: "nourish", title: "A little chocolate and a few almonds", minutes: 2, places: ["desk", "home", "out"], tags: ["craving-sweet", "low-mood", "on-period"],
     why: "Chocolate is allowed here. A few almonds alongside just make the moment last a bit longer.",
-    steps: ["Break off a square or two of 70%+ dark chocolate", "Grab five or six almonds", "Let the chocolate melt instead of rushing it"], kind: "enjoy" },
+    steps: ["Pick a chocolate with no added sugar (sugar-free or date-sweetened)", "Have a square or two with five or six almonds, and let it melt slowly"], kind: "enjoy" },
   { id: "prep-snack", category: "nourish", title: "Set up an easy snack for later", minutes: 10, places: ["home"], tags: ["okay"],
     why: "Good days are a great time to make future-you's tired evening a bit easier.",
     steps: ["Portion unsalted nuts, roasted chana or makhana into a box", "Or wash some fruit and leave it where you'll see it", "Put it somewhere obvious"], kind: "enjoy" },
@@ -182,6 +188,8 @@ export function rankIdeas(checkin, profile, history) {
     score += idea.places.includes(checkin.place) ? 2 : -5;
     if (areas.has(CATEGORIES[idea.category].area)) score += 2;
     else if (areas.size) score -= 2;
+    // On period, cramp or bloating days, warm comforting food comes first
+    if (idea.warm && checkin.feelings.some((f) => ["on-period", "crampy", "bloated"].includes(f))) score += 2;
     if (helped.has(idea.id)) score += 2;
     if (recent.has(idea.id)) score -= 2;
     if (checkin.time >= 10 && idea.minutes >= 5) score += 1;
